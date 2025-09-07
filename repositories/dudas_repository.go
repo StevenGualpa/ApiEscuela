@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"ApiEscuela/models"
+	"time"
 	"gorm.io/gorm"
 )
 
@@ -15,6 +16,10 @@ func NewDudasRepository(db *gorm.DB) *DudasRepository {
 
 // CreateDudas crea una nueva duda
 func (r *DudasRepository) CreateDudas(duda *models.Dudas) error {
+	// Establecer la fecha de pregunta automáticamente si no está establecida
+	if duda.FechaPregunta.IsZero() {
+		duda.FechaPregunta = time.Now()
+	}
 	return r.db.Create(duda).Error
 }
 
@@ -124,6 +129,10 @@ func (r *DudasRepository) AsignarAutoridadADuda(dudaID, autoridadID uint) error 
 
 // ResponderDuda actualiza la respuesta de una duda
 func (r *DudasRepository) ResponderDuda(dudaID uint, respuesta string) error {
+	now := time.Now()
 	return r.db.Model(&models.Dudas{}).Where("id = ?", dudaID).
-		Update("respuesta", respuesta).Error
+		Updates(map[string]interface{}{
+			"respuesta":        &respuesta,
+			"fecha_respuesta":  &now,
+		}).Error
 }

@@ -12,8 +12,6 @@ ApiEscuela/
 ├── routers/         # Configuración consolidada de rutas
 ├── main.go         # Punto de entrada de la aplicación
 ├── config.env      # Variables de entorno
-├── escuela.xmi     # Modelo UML de la base de datos
-├── API_ENDPOINTS.md # Documentación completa de endpoints
 └── README.md       # Este archivo
 ```
 
@@ -236,6 +234,25 @@ Base URL: `http://localhost:3000`
 {
   "pregunta": "¿Cuáles son los requisitos de ingreso?",
   "estudiante_id": 1
+}
+```
+
+**Campos Opcionales**:
+- `fecha_pregunta`: Se establece automáticamente al crear la duda si no se proporciona
+- `respuesta`: Campo opcional, se llena cuando se responde la duda
+- `fecha_respuesta`: Se establece automáticamente al responder la duda
+- `autoridad_uteq_id`: Campo opcional, se asigna cuando una autoridad toma la duda
+
+**Ejemplo de Duda Completa** (después de ser asignada y respondida):
+```json
+{
+  "id": 1,
+  "pregunta": "¿Cuáles son los requisitos de ingreso?",
+  "fecha_pregunta": "2024-03-15T10:30:00Z",
+  "respuesta": "Los requisitos incluyen bachillerato completo...",
+  "fecha_respuesta": "2024-03-15T14:45:00Z",
+  "estudiante_id": 1,
+  "autoridad_uteq_id": 2
 }
 ```
 
