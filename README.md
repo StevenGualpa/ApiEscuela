@@ -256,17 +256,9 @@ Base URL: `http://localhost:3000`
 }
 ```
 
-**📖 Ver documentación completa en [API_ENDPOINTS.md](API_ENDPOINTS.md)**
-
 ## 🗄️ Configuración de Base de Datos
 
 El proyecto está configurado para conectarse a la base de datos de la UTEQ:
-
-- **Host**: aplicaciones.uteq.edu.ec
-- **Puerto**: 9010
-- **Usuario**: aplicaciones
-- **Base de datos**: bdrealidaduteq
-- **SSL**: requerido
 
 ### Automigración
 El sistema crea automáticamente todas las 14 tablas con sus relaciones al iniciar.
@@ -504,8 +496,8 @@ curl "http://localhost:3000/programas-visita/rango-fecha?inicio=2024-01-01&fin=2
 ## 🚀 Estado del Proyecto
 
 ✅ **Sistema Completo y Funcional**
-- 14 entidades implementadas
-- 70+ endpoints API
+- entidades implementadas
+- endpoints API
 - Sistema de autenticación
 - Filtros y búsquedas avanzadas
 - Estadísticas integradas
