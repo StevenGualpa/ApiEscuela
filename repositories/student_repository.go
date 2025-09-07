@@ -5,59 +5,76 @@ import (
 	"gorm.io/gorm"
 )
 
-type StudentRepository struct {
+type EstudianteRepository struct {
 	db *gorm.DB
 }
 
-func NewStudentRepository(db *gorm.DB) *StudentRepository {
-	return &StudentRepository{db: db}
+func NewEstudianteRepository(db *gorm.DB) *EstudianteRepository {
+	return &EstudianteRepository{db: db}
 }
 
-// CreateStudent crea un nuevo estudiante
-func (r *StudentRepository) CreateStudent(student *models.Student) error {
-	return r.db.Create(student).Error
+// CreateEstudiante crea un nuevo estudiante
+func (r *EstudianteRepository) CreateEstudiante(estudiante *models.Estudiante) error {
+	return r.db.Create(estudiante).Error
 }
 
-// GetStudentByID obtiene un estudiante por ID
-func (r *StudentRepository) GetStudentByID(id uint) (*models.Student, error) {
-	var student models.Student
-	err := r.db.First(&student, id).Error
+// GetEstudianteByID obtiene un estudiante por ID
+func (r *EstudianteRepository) GetEstudianteByID(id uint) (*models.Estudiante, error) {
+	var estudiante models.Estudiante
+	err := r.db.Preload("Persona").Preload("Institucion").
+		Preload("Ciudad").Preload("Ciudad.Provincia").
+		Preload("Dudas").First(&estudiante, id).Error
 	if err != nil {
 		return nil, err
 	}
-	return &student, nil
+	return &estudiante, nil
 }
 
-// GetStudentByCedula obtiene un estudiante por cédula
-func (r *StudentRepository) GetStudentByCedula(cedula string) (*models.Student, error) {
-	var student models.Student
-	err := r.db.Where("cedula = ?", cedula).First(&student).Error
-	if err != nil {
-		return nil, err
-	}
-	return &student, nil
+// GetAllEstudiantes obtiene todos los estudiantes
+func (r *EstudianteRepository) GetAllEstudiantes() ([]models.Estudiante, error) {
+	var estudiantes []models.Estudiante
+	err := r.db.Preload("Persona").Preload("Institucion").
+		Preload("Ciudad").Preload("Ciudad.Provincia").
+		Find(&estudiantes).Error
+	return estudiantes, err
 }
 
-// GetAllStudents obtiene todos los estudiantes
-func (r *StudentRepository) GetAllStudents() ([]models.Student, error) {
-	var students []models.Student
-	err := r.db.Find(&students).Error
-	return students, err
+// UpdateEstudiante actualiza un estudiante
+func (r *EstudianteRepository) UpdateEstudiante(estudiante *models.Estudiante) error {
+	return r.db.Save(estudiante).Error
 }
 
-// UpdateStudent actualiza un estudiante
-func (r *StudentRepository) UpdateStudent(student *models.Student) error {
-	return r.db.Save(student).Error
+// DeleteEstudiante elimina un estudiante
+func (r *EstudianteRepository) DeleteEstudiante(id uint) error {
+	return r.db.Delete(&models.Estudiante{}, id).Error
 }
 
-// DeleteStudent elimina un estudiante
-func (r *StudentRepository) DeleteStudent(id uint) error {
-	return r.db.Delete(&models.Student{}, id).Error
+// GetEstudiantesByCity obtiene estudiantes por ciudad
+func (r *EstudianteRepository) GetEstudiantesByCity(ciudadID uint) ([]models.Estudiante, error) {
+	var estudiantes []models.Estudiante
+	err := r.db.Where("ciudad_id = ?", ciudadID).
+		Preload("Persona").Preload("Institucion").
+		Preload("Ciudad").Preload("Ciudad.Provincia").
+		Find(&estudiantes).Error
+	return estudiantes, err
 }
 
-// GetStudentsByCity obtiene estudiantes por ciudad
-func (r *StudentRepository) GetStudentsByCity(ciudad string) ([]models.Student, error) {
-	var students []models.Student
-	err := r.db.Where("ciudad = ?", ciudad).Find(&students).Error
-	return students, err
+// GetEstudiantesByInstitucion obtiene estudiantes por institución
+func (r *EstudianteRepository) GetEstudiantesByInstitucion(institucionID uint) ([]models.Estudiante, error) {
+	var estudiantes []models.Estudiante
+	err := r.db.Where("institucion_id = ?", institucionID).
+		Preload("Persona").Preload("Institucion").
+		Preload("Ciudad").Preload("Ciudad.Provincia").
+		Find(&estudiantes).Error
+	return estudiantes, err
+}
+
+// GetEstudiantesByEspecialidad obtiene estudiantes por especialidad
+func (r *EstudianteRepository) GetEstudiantesByEspecialidad(especialidad string) ([]models.Estudiante, error) {
+	var estudiantes []models.Estudiante
+	err := r.db.Where("especialidad ILIKE ?", "%"+especialidad+"%").
+		Preload("Persona").Preload("Institucion").
+		Preload("Ciudad").Preload("Ciudad.Provincia").
+		Find(&estudiantes).Error
+	return estudiantes, err
 }

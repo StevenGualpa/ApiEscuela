@@ -18,6 +18,21 @@ func main() {
 	// Inicializar Fiber
 	app := fiber.New(fiber.Config{
 		AppName: "ApiEscuela v1.0",
+		// Configurar para aceptar JSON automáticamente
+		BodyLimit: 4 * 1024 * 1024, // 4MB
+	})
+
+	// Middleware para detectar JSON automáticamente
+	app.Use(func(c *fiber.Ctx) error {
+		// Si el body parece JSON pero no tiene Content-Type, lo establecemos
+		if len(c.Body()) > 0 {
+			body := c.Body()
+			// Verificar si el body comienza con { o [ (JSON)
+			if (body[0] == '{' || body[0] == '[') && c.Get("Content-Type") == "" {
+				c.Request().Header.Set("Content-Type", "application/json")
+			}
+		}
+		return c.Next()
 	})
 
 	// Configurar CORS
@@ -50,19 +65,78 @@ func main() {
 		log.Fatalf("Error al conectar con la base de datos: %v", err)
 	}
 
-	// Automigración del modelo Student
-	if err := db.AutoMigrate(&models.Student{}); err != nil {
+	// Automigración de todos los modelos
+	if err := db.AutoMigrate(
+		&models.Provincia{},
+		&models.Ciudad{},
+		&models.Persona{},
+		&models.TipoUsuario{},
+		&models.Usuario{},
+		&models.Institucion{},
+		&models.Estudiante{},
+		&models.EstudianteUniversitario{},
+		&models.AutoridadUTEQ{},
+		&models.Tematica{},
+		&models.Actividad{},
+		&models.ProgramaVisita{},
+		&models.VisitaDetalle{},
+		&models.Dudas{},
+	); err != nil {
 		log.Fatalf("Error en la automigración: %v", err)
 	}
 
-	// Inicializar repositorio
-	studentRepo := repositories.NewStudentRepository(db)
+	// Inicializar repositorios
+	estudianteRepo := repositories.NewEstudianteRepository(db)
+	personaRepo := repositories.NewPersonaRepository(db)
+	provinciaRepo := repositories.NewProvinciaRepository(db)
+	ciudadRepo := repositories.NewCiudadRepository(db)
+	institucionRepo := repositories.NewInstitucionRepository(db)
+	tipoUsuarioRepo := repositories.NewTipoUsuarioRepository(db)
+	usuarioRepo := repositories.NewUsuarioRepository(db)
+	estudianteUnivRepo := repositories.NewEstudianteUniversitarioRepository(db)
+	autoridadRepo := repositories.NewAutoridadUTEQRepository(db)
+	tematicaRepo := repositories.NewTematicaRepository(db)
+	actividadRepo := repositories.NewActividadRepository(db)
+	programaVisitaRepo := repositories.NewProgramaVisitaRepository(db)
+	visitaDetalleRepo := repositories.NewVisitaDetalleRepository(db)
+	dudasRepo := repositories.NewDudasRepository(db)
 
-	// Inicializar handler
-	studentHandler := handlers.NewStudentHandler(studentRepo)
+	// Inicializar handlers
+	estudianteHandler := handlers.NewEstudianteHandler(estudianteRepo)
+	personaHandler := handlers.NewPersonaHandler(personaRepo)
+	provinciaHandler := handlers.NewProvinciaHandler(provinciaRepo)
+	ciudadHandler := handlers.NewCiudadHandler(ciudadRepo)
+	institucionHandler := handlers.NewInstitucionHandler(institucionRepo)
+	tipoUsuarioHandler := handlers.NewTipoUsuarioHandler(tipoUsuarioRepo)
+	usuarioHandler := handlers.NewUsuarioHandler(usuarioRepo)
+	estudianteUnivHandler := handlers.NewEstudianteUniversitarioHandler(estudianteUnivRepo)
+	autoridadHandler := handlers.NewAutoridadUTEQHandler(autoridadRepo)
+	tematicaHandler := handlers.NewTematicaHandler(tematicaRepo)
+	actividadHandler := handlers.NewActividadHandler(actividadRepo)
+	programaVisitaHandler := handlers.NewProgramaVisitaHandler(programaVisitaRepo)
+	visitaDetalleHandler := handlers.NewVisitaDetalleHandler(visitaDetalleRepo)
+	dudasHandler := handlers.NewDudasHandler(dudasRepo)
 
-	// Configurar rutas
-	routers.SetupStudentRoutes(app, studentHandler)
+	// Crear contenedor de todos los handlers
+	allHandlers := routers.NewAllHandlers(
+		estudianteHandler,
+		personaHandler,
+		provinciaHandler,
+		ciudadHandler,
+		institucionHandler,
+		tipoUsuarioHandler,
+		usuarioHandler,
+		estudianteUnivHandler,
+		autoridadHandler,
+		tematicaHandler,
+		actividadHandler,
+		programaVisitaHandler,
+		visitaDetalleHandler,
+		dudasHandler,
+	)
+
+	// Configurar todas las rutas
+	routers.SetupAllRoutes(app, allHandlers)
 
 	// Ruta de bienvenida
 	app.Get("/", func(c *fiber.Ctx) error {
