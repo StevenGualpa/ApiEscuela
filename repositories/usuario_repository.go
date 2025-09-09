@@ -88,3 +88,37 @@ func (r *UsuarioRepository) ValidateLogin(username, password string) (*models.Us
 	}
 	return &usuario, nil
 }
+
+// GetAllUsuariosIncludingDeleted obtiene todos los usuarios incluyendo los eliminados
+func (r *UsuarioRepository) GetAllUsuariosIncludingDeleted() ([]models.Usuario, error) {
+	var usuarios []models.Usuario
+	err := r.db.Unscoped().Preload("Persona").Preload("TipoUsuario").
+		Find(&usuarios).Error
+	return usuarios, err
+}
+
+// GetDeletedUsuarios obtiene solo los usuarios eliminados
+func (r *UsuarioRepository) GetDeletedUsuarios() ([]models.Usuario, error) {
+	var usuarios []models.Usuario
+	err := r.db.Unscoped().Where("deleted_at IS NOT NULL").
+		Preload("Persona").Preload("TipoUsuario").
+		Find(&usuarios).Error
+	return usuarios, err
+}
+
+// RestoreUsuario restaura un usuario eliminado (soft delete)
+func (r *UsuarioRepository) RestoreUsuario(id uint) error {
+	return r.db.Unscoped().Model(&models.Usuario{}).
+		Where("id = ?", id).Update("deleted_at", nil).Error
+}
+
+// GetUsuarioByIDIncludingDeleted obtiene un usuario por ID incluyendo eliminados
+func (r *UsuarioRepository) GetUsuarioByIDIncludingDeleted(id uint) (*models.Usuario, error) {
+	var usuario models.Usuario
+	err := r.db.Unscoped().Preload("Persona").Preload("TipoUsuario").
+		First(&usuario, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &usuario, nil
+}

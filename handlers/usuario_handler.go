@@ -219,3 +219,72 @@ func (h *UsuarioHandler) Login(c *fiber.Ctx) error {
 		"usuario": usuario,
 	})
 }
+
+// GetAllUsuariosIncludingDeleted obtiene todos los usuarios incluyendo eliminados
+func (h *UsuarioHandler) GetAllUsuariosIncludingDeleted(c *fiber.Ctx) error {
+	usuarios, err := h.usuarioRepo.GetAllUsuariosIncludingDeleted()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener los usuarios",
+		})
+	}
+
+	// No devolver las contraseñas
+	for i := range usuarios {
+		usuarios[i].Contraseña = ""
+	}
+
+	return c.JSON(usuarios)
+}
+
+// GetDeletedUsuarios obtiene solo los usuarios eliminados
+func (h *UsuarioHandler) GetDeletedUsuarios(c *fiber.Ctx) error {
+	usuarios, err := h.usuarioRepo.GetDeletedUsuarios()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener los usuarios eliminados",
+		})
+	}
+
+	// No devolver las contraseñas
+	for i := range usuarios {
+		usuarios[i].Contraseña = ""
+	}
+
+	return c.JSON(usuarios)
+}
+
+// RestoreUsuario restaura un usuario eliminado
+func (h *UsuarioHandler) RestoreUsuario(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ID de usuario inválido",
+		})
+	}
+
+	// Verificar que el usuario existe (incluyendo eliminados)
+	usuario, err := h.usuarioRepo.GetUsuarioByIDIncludingDeleted(uint(id))
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Usuario no encontrado",
+		})
+	}
+
+	// Verificar que el usuario está eliminado
+	if usuario.DeletedAt.Time.IsZero() {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "El usuario no está eliminado",
+		})
+	}
+
+	if err := h.usuarioRepo.RestoreUsuario(uint(id)); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se puede restaurar el usuario",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Usuario restaurado exitosamente",
+	})
+}
