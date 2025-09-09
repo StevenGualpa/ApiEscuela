@@ -131,6 +131,16 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	programas.Get("/institucion/:institucion_id", handlers.ProgramaVisitaHandler.GetProgramasVisitaByInstitucion)
 	programas.Get("/rango-fecha", handlers.ProgramaVisitaHandler.GetProgramasVisitaByRangoFecha) // ?inicio=2024-01-01&fin=2024-12-31
 
+	// ==================== DETALLE AUTORIDAD DETALLES VISITA ====================
+	detalleAutoridad := app.Group("/detalle-autoridad-detalles-visita")
+	detalleAutoridad.Post("/", handlers.DetalleAutoridadDetallesVisitaHandler.CreateDetalleAutoridadDetallesVisita)
+	detalleAutoridad.Get("/", handlers.DetalleAutoridadDetallesVisitaHandler.GetAllDetalleAutoridadDetallesVisitas)
+	detalleAutoridad.Get("/:id", handlers.DetalleAutoridadDetallesVisitaHandler.GetDetalleAutoridadDetallesVisita)
+	detalleAutoridad.Put("/:id", handlers.DetalleAutoridadDetallesVisitaHandler.UpdateDetalleAutoridadDetallesVisita)
+	detalleAutoridad.Delete("/:id", handlers.DetalleAutoridadDetallesVisitaHandler.DeleteDetalleAutoridadDetallesVisita)
+	detalleAutoridad.Get("/programa-visita/:programa_visita_id", handlers.DetalleAutoridadDetallesVisitaHandler.GetDetallesByProgramaVisita)
+	detalleAutoridad.Get("/autoridad/:autoridad_id", handlers.DetalleAutoridadDetallesVisitaHandler.GetDetallesByAutoridad)
+
 	// ==================== VISITA DETALLES ====================
 	detalles := app.Group("/visita-detalles")
 	detalles.Post("/", handlers.VisitaDetalleHandler.CreateVisitaDetalle)
