@@ -78,10 +78,13 @@ Base URL: `http://localhost:3000`
 
 ### 🔐 Sistema de Usuarios y Autenticación
 - `POST /usuarios` - Crear usuario
-- `GET /usuarios` - Obtener todos los usuarios
+- `GET /usuarios` - Obtener todos los usuarios activos
+- `GET /usuarios/all-including-deleted` - **📋 Obtener todos los usuarios (activos + eliminados)**
+- `GET /usuarios/deleted` - **🗑️ Obtener solo usuarios eliminados**
 - `GET /usuarios/:id` - Obtener usuario por ID
 - `PUT /usuarios/:id` - Actualizar usuario
-- `DELETE /usuarios/:id` - Eliminar usuario
+- `DELETE /usuarios/:id` - Eliminar usuario (soft delete)
+- `PUT /usuarios/:id/restore` - **♻️ Restaurar usuario eliminado**
 - `GET /usuarios/username/:username` - Buscar por nombre de usuario
 - `GET /usuarios/tipo/:tipo_usuario_id` - Filtrar por tipo
 - `GET /usuarios/persona/:persona_id` - Filtrar por persona
@@ -407,6 +410,38 @@ curl -X POST http://localhost:3000/usuarios \
   }'
 ```
 
+### 🗑️ Gestión de Usuarios Eliminados (Soft Delete)
+
+### Obtener Todos los Usuarios (Incluyendo Eliminados)
+```bash
+curl http://localhost:3000/usuarios/all-including-deleted
+```
+
+### Obtener Solo Usuarios Eliminados
+```bash
+curl http://localhost:3000/usuarios/deleted
+```
+
+### Restaurar Usuario Eliminado
+```bash
+curl -X PUT http://localhost:3000/usuarios/5/restore
+```
+
+### Ejemplo de Flujo Completo de Soft Delete
+```bash
+# 1. Eliminar usuario (soft delete)
+curl -X DELETE http://localhost:3000/usuarios/5
+
+# 2. Verificar que aparece en usuarios eliminados
+curl http://localhost:3000/usuarios/deleted
+
+# 3. Restaurar el usuario
+curl -X PUT http://localhost:3000/usuarios/5/restore
+
+# 4. Verificar que el usuario está activo nuevamente
+curl http://localhost:3000/usuarios/5
+```
+
 ### Crear una Provincia
 ```bash
 curl -X POST http://localhost:3000/provincias \
@@ -533,6 +568,9 @@ curl "http://localhost:3000/programas-visita/rango-fecha?inicio=2024-01-01&fin=2
 - Sistema de autenticación
 - Tipos de usuarios diferenciados
 - Gestión de perfiles
+- **🗑️ Soft Delete**: Eliminación segura con posibilidad de restauración
+- **♻️ Restauración**: Recuperación de usuarios eliminados accidentalmente
+- **📋 Auditoría**: Visualización de usuarios eliminados para control administrativo
 
 ### ❓ Sistema de Dudas
 - Creación de dudas por estudiantes
