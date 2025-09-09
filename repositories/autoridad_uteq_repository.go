@@ -21,7 +21,7 @@ func (r *AutoridadUTEQRepository) CreateAutoridadUTEQ(autoridad *models.Autorida
 // GetAutoridadUTEQByID obtiene una autoridad UTEQ por ID
 func (r *AutoridadUTEQRepository) GetAutoridadUTEQByID(id uint) (*models.AutoridadUTEQ, error) {
 	var autoridad models.AutoridadUTEQ
-	err := r.db.Preload("Persona").Preload("ProgramasVisita").
+	err := r.db.Preload("Persona").Preload("DetalleAutoridadDetallesVisitas").
 		Preload("Dudas").First(&autoridad, id).Error
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (r *AutoridadUTEQRepository) GetAutoridadUTEQByID(id uint) (*models.Autorid
 // GetAllAutoridadesUTEQ obtiene todas las autoridades UTEQ
 func (r *AutoridadUTEQRepository) GetAllAutoridadesUTEQ() ([]models.AutoridadUTEQ, error) {
 	var autoridades []models.AutoridadUTEQ
-	err := r.db.Preload("Persona").Preload("ProgramasVisita").
+	err := r.db.Preload("Persona").Preload("DetalleAutoridadDetallesVisitas").
 		Preload("Dudas").Find(&autoridades).Error
 	return autoridades, err
 }
@@ -51,7 +51,7 @@ func (r *AutoridadUTEQRepository) DeleteAutoridadUTEQ(id uint) error {
 func (r *AutoridadUTEQRepository) GetAutoridadesUTEQByCargo(cargo string) ([]models.AutoridadUTEQ, error) {
 	var autoridades []models.AutoridadUTEQ
 	err := r.db.Where("cargo ILIKE ?", "%"+cargo+"%").
-		Preload("Persona").Preload("ProgramasVisita").
+		Preload("Persona").Preload("DetalleAutoridadDetallesVisitas").
 		Preload("Dudas").Find(&autoridades).Error
 	return autoridades, err
 }
@@ -60,7 +60,7 @@ func (r *AutoridadUTEQRepository) GetAutoridadesUTEQByCargo(cargo string) ([]mod
 func (r *AutoridadUTEQRepository) GetAutoridadUTEQByPersona(personaID uint) (*models.AutoridadUTEQ, error) {
 	var autoridad models.AutoridadUTEQ
 	err := r.db.Where("persona_id = ?", personaID).
-		Preload("Persona").Preload("ProgramasVisita").
+		Preload("Persona").Preload("DetalleAutoridadDetallesVisitas").
 		Preload("Dudas").First(&autoridad).Error
 	if err != nil {
 		return nil, err
