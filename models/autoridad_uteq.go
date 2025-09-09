@@ -9,7 +9,7 @@ type AutoridadUTEQ struct {
 	Cargo     string `json:"cargo"`
 	
 	// Relaciones
-	Persona         Persona          `json:"persona,omitempty" gorm:"foreignKey:PersonaID"`
-	ProgramasVisita []ProgramaVisita `json:"programas_visita,omitempty" gorm:"foreignKey:AutoridadUTEQID"`
-	Dudas           []Dudas          `json:"dudas,omitempty" gorm:"foreignKey:AutoridadUTEQID"`
+	Persona                         Persona                           `json:"persona,omitempty" gorm:"foreignKey:PersonaID"`
+	DetalleAutoridadDetallesVisitas []DetalleAutoridadDetallesVisita  `json:"detalle_autoridad_detalles_visitas,omitempty" gorm:"foreignKey:AutoridadUTEQID"`
+	Dudas                           []Dudas                           `json:"dudas,omitempty" gorm:"foreignKey:AutoridadUTEQID"`
 }

@@ -79,6 +79,7 @@ func main() {
 		&models.Tematica{},
 		&models.Actividad{},
 		&models.ProgramaVisita{},
+		&models.DetalleAutoridadDetallesVisita{},
 		&models.VisitaDetalle{},
 		&models.Dudas{},
 	); err != nil {
@@ -98,6 +99,7 @@ func main() {
 	tematicaRepo := repositories.NewTematicaRepository(db)
 	actividadRepo := repositories.NewActividadRepository(db)
 	programaVisitaRepo := repositories.NewProgramaVisitaRepository(db)
+	detalleAutoridadDetallesVisitaRepo := repositories.NewDetalleAutoridadDetallesVisitaRepository(db)
 	visitaDetalleRepo := repositories.NewVisitaDetalleRepository(db)
 	dudasRepo := repositories.NewDudasRepository(db)
 
@@ -114,6 +116,7 @@ func main() {
 	tematicaHandler := handlers.NewTematicaHandler(tematicaRepo)
 	actividadHandler := handlers.NewActividadHandler(actividadRepo)
 	programaVisitaHandler := handlers.NewProgramaVisitaHandler(programaVisitaRepo)
+	detalleAutoridadDetallesVisitaHandler := handlers.NewDetalleAutoridadDetallesVisitaHandler(detalleAutoridadDetallesVisitaRepo)
 	visitaDetalleHandler := handlers.NewVisitaDetalleHandler(visitaDetalleRepo)
 	dudasHandler := handlers.NewDudasHandler(dudasRepo)
 
@@ -131,6 +134,7 @@ func main() {
 		tematicaHandler,
 		actividadHandler,
 		programaVisitaHandler,
+		detalleAutoridadDetallesVisitaHandler,
 		visitaDetalleHandler,
 		dudasHandler,
 	)

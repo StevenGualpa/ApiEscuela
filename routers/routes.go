@@ -163,20 +163,21 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 
 // AllHandlers contiene todos los handlers de la aplicación
 type AllHandlers struct {
-	EstudianteHandler      *handlers.EstudianteHandler
-	PersonaHandler         *handlers.PersonaHandler
-	ProvinciaHandler       *handlers.ProvinciaHandler
-	CiudadHandler          *handlers.CiudadHandler
-	InstitucionHandler     *handlers.InstitucionHandler
-	TipoUsuarioHandler     *handlers.TipoUsuarioHandler
-	UsuarioHandler         *handlers.UsuarioHandler
-	EstudianteUnivHandler  *handlers.EstudianteUniversitarioHandler
-	AutoridadHandler       *handlers.AutoridadUTEQHandler
-	TematicaHandler        *handlers.TematicaHandler
-	ActividadHandler       *handlers.ActividadHandler
-	ProgramaVisitaHandler  *handlers.ProgramaVisitaHandler
-	VisitaDetalleHandler   *handlers.VisitaDetalleHandler
-	DudasHandler           *handlers.DudasHandler
+	EstudianteHandler                      *handlers.EstudianteHandler
+	PersonaHandler                         *handlers.PersonaHandler
+	ProvinciaHandler                       *handlers.ProvinciaHandler
+	CiudadHandler                          *handlers.CiudadHandler
+	InstitucionHandler                     *handlers.InstitucionHandler
+	TipoUsuarioHandler                     *handlers.TipoUsuarioHandler
+	UsuarioHandler                         *handlers.UsuarioHandler
+	EstudianteUnivHandler                  *handlers.EstudianteUniversitarioHandler
+	AutoridadHandler                       *handlers.AutoridadUTEQHandler
+	TematicaHandler                        *handlers.TematicaHandler
+	ActividadHandler                       *handlers.ActividadHandler
+	ProgramaVisitaHandler                  *handlers.ProgramaVisitaHandler
+	DetalleAutoridadDetallesVisitaHandler  *handlers.DetalleAutoridadDetallesVisitaHandler
+	VisitaDetalleHandler                   *handlers.VisitaDetalleHandler
+	DudasHandler                           *handlers.DudasHandler
 }
 
 // NewAllHandlers crea una instancia con todos los handlers
@@ -193,23 +194,25 @@ func NewAllHandlers(
 	tematicaHandler *handlers.TematicaHandler,
 	actividadHandler *handlers.ActividadHandler,
 	programaVisitaHandler *handlers.ProgramaVisitaHandler,
+	detalleAutoridadDetallesVisitaHandler *handlers.DetalleAutoridadDetallesVisitaHandler,
 	visitaDetalleHandler *handlers.VisitaDetalleHandler,
 	dudasHandler *handlers.DudasHandler,
 ) *AllHandlers {
 	return &AllHandlers{
-		EstudianteHandler:     estudianteHandler,
-		PersonaHandler:        personaHandler,
-		ProvinciaHandler:      provinciaHandler,
-		CiudadHandler:         ciudadHandler,
-		InstitucionHandler:    institucionHandler,
-		TipoUsuarioHandler:    tipoUsuarioHandler,
-		UsuarioHandler:        usuarioHandler,
-		EstudianteUnivHandler: estudianteUnivHandler,
-		AutoridadHandler:      autoridadHandler,
-		TematicaHandler:       tematicaHandler,
-		ActividadHandler:      actividadHandler,
-		ProgramaVisitaHandler: programaVisitaHandler,
-		VisitaDetalleHandler:  visitaDetalleHandler,
-		DudasHandler:          dudasHandler,
+		EstudianteHandler:                     estudianteHandler,
+		PersonaHandler:                        personaHandler,
+		ProvinciaHandler:                      provinciaHandler,
+		CiudadHandler:                         ciudadHandler,
+		InstitucionHandler:                    institucionHandler,
+		TipoUsuarioHandler:                    tipoUsuarioHandler,
+		UsuarioHandler:                        usuarioHandler,
+		EstudianteUnivHandler:                 estudianteUnivHandler,
+		AutoridadHandler:                      autoridadHandler,
+		TematicaHandler:                       tematicaHandler,
+		ActividadHandler:                      actividadHandler,
+		ProgramaVisitaHandler:                 programaVisitaHandler,
+		DetalleAutoridadDetallesVisitaHandler: detalleAutoridadDetallesVisitaHandler,
+		VisitaDetalleHandler:                  visitaDetalleHandler,
+		DudasHandler:                          dudasHandler,
 	}
 }
