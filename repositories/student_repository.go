@@ -44,9 +44,86 @@ func (r *EstudianteRepository) UpdateEstudiante(estudiante *models.Estudiante) e
 	return r.db.Save(estudiante).Error
 }
 
-// DeleteEstudiante elimina un estudiante
+// DeleteEstudiante elimina un estudiante y en cascada su usuario y persona
 func (r *EstudianteRepository) DeleteEstudiante(id uint) error {
-	return r.db.Delete(&models.Estudiante{}, id).Error
+	// Iniciar transacción
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Obtener el estudiante con su persona
+	var estudiante models.Estudiante
+	if err := tx.Preload("Persona").First(&estudiante, id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Eliminar el estudiante (soft delete)
+	if err := tx.Delete(&estudiante).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Eliminar usuarios asociados a la persona (soft delete)
+	if err := tx.Where("persona_id = ?", estudiante.PersonaID).Delete(&models.Usuario{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Eliminar la persona (soft delete)
+	if err := tx.Delete(&models.Persona{}, estudiante.PersonaID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
+}
+
+// RestoreEstudiante restaura un estudiante eliminado y en cascada su usuario y persona
+func (r *EstudianteRepository) RestoreEstudiante(id uint) error {
+	// Iniciar transacción
+	tx := r.db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// Obtener el estudiante eliminado con su persona
+	var estudiante models.Estudiante
+	if err := tx.Unscoped().Preload("Persona").First(&estudiante, id).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Restaurar la persona
+	if err := tx.Unscoped().Model(&models.Persona{}).Where("id = ?", estudiante.PersonaID).Update("deleted_at", nil).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Restaurar usuarios asociados a la persona
+	if err := tx.Unscoped().Model(&models.Usuario{}).Where("persona_id = ?", estudiante.PersonaID).Update("deleted_at", nil).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Restaurar el estudiante
+	if err := tx.Unscoped().Model(&estudiante).Update("deleted_at", nil).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 // GetEstudiantesByCity obtiene estudiantes por ciudad

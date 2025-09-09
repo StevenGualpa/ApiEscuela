@@ -97,7 +97,7 @@ func (h *EstudianteHandler) UpdateEstudiante(c *fiber.Ctx) error {
 	return c.JSON(estudiante)
 }
 
-// DeleteEstudiante elimina un estudiante
+// DeleteEstudiante elimina un estudiante y en cascada su usuario y persona
 func (h *EstudianteHandler) DeleteEstudiante(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -108,12 +108,32 @@ func (h *EstudianteHandler) DeleteEstudiante(c *fiber.Ctx) error {
 
 	if err := h.estudianteRepo.DeleteEstudiante(uint(id)); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede eliminar el estudiante",
+			"error": "No se puede eliminar el estudiante y sus datos relacionados",
 		})
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Estudiante eliminado exitosamente",
+		"message": "Estudiante, usuario y persona eliminados exitosamente",
+	})
+}
+
+// RestoreEstudiante restaura un estudiante eliminado y en cascada su usuario y persona
+func (h *EstudianteHandler) RestoreEstudiante(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ID de estudiante inválido",
+		})
+	}
+
+	if err := h.estudianteRepo.RestoreEstudiante(uint(id)); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se puede restaurar el estudiante y sus datos relacionados",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Estudiante, usuario y persona restaurados exitosamente",
 	})
 }
 
