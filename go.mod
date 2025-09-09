@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.6
+	github.com/joho/godotenv v1.5.1
 	github.com/spf13/viper v1.19.0
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12

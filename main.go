@@ -6,15 +6,23 @@ import (
 	"ApiEscuela/repositories"
 	"ApiEscuela/routers"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
+	// Cargar variables de entorno desde .env
+	err := godotenv.Load()
+	if err != nil {
+		log.Printf("Advertencia: No se pudo cargar el archivo .env: %v", err)
+	}
+
 	// Inicializar Fiber
 	app := fiber.New(fiber.Config{
 		AppName: "ApiEscuela v1.0",
@@ -57,8 +65,20 @@ func main() {
 		log.Printf("Advertencia: No se pudo leer el archivo de configuración. %v", err)
 	}
 
-	// Configurar conexión a la base de datos UTEQ
-	dsn := "host=aplicaciones.uteq.edu.ec user=aplicaciones password=z8E9bYdQpHmOvtfH6Up5dE1HKCh35pgwlEDuZqMklOtg3Zm2UA dbname=bdrealidaduteq port=9010 sslmode=require"
+	// Configurar conexión a la base de datos
+	var dsn string
+	
+	// Intentar usar DATABASE_URL primero (para producción/Neon)
+	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
+		dsn = databaseURL
+		log.Printf("Usando DATABASE_URL (Neon) para conexión a la base de datos")
+	} else {
+		// Fallback a la configuración Neon por defecto
+		// Configuración anterior (UTEQ) comentada:
+		// dsn = "host=aplicaciones.uteq.edu.ec user=aplicaciones password=z8E9bYdQpHmOvtfH6Up5dE1HKCh35pgwlEDuZqMklOtg3Zm2UA dbname=bdrealidaduteq port=9010 sslmode=require"
+		dsn = "postgresql://neondb_owner:npg_UkVLzt5h0Zyx@ep-noisy-heart-aehgd4hl-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+		log.Printf("Usando configuración Neon por defecto para conexión a la base de datos")
+	}
 	
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -163,7 +183,7 @@ func main() {
 	port := config.GetString("APP_PORT")
 	log.Printf("Servidor ApiEscuela iniciado en el puerto %s", port)
 	log.Printf("Ambiente: %s", config.GetString("APP_ENV"))
-	log.Printf("Conectado a la base de datos UTEQ")
+	log.Printf("Conectado a la base de datos exitosamente")
 
 	if err := app.Listen(":" + port); err != nil {
 		log.Fatalf("Error al iniciar el servidor: %v", err)
