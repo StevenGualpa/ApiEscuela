@@ -6,7 +6,7 @@ Un backend completo desarrollado en Go para la gestión integral de visitas educ
 
 ```
 ApiEscuela/
-├── models/          # 14 modelos de datos (entidades del sistema)
+├── models/          # 15 modelos de datos (entidades del sistema)
 ├── repositories/    # Repositorios para acceso a datos
 ├── handlers/        # Controladores HTTP para todas las entidades
 ├── routers/         # Configuración consolidada de rutas
@@ -17,7 +17,7 @@ ApiEscuela/
 
 ## 📊 Modelos del Sistema
 
-### Entidades Principales (14 modelos)
+### Entidades Principales (15 modelos)
 
 1. **Persona** - Información básica de personas
 2. **Estudiante** - Estudiantes de instituciones educativas
@@ -25,14 +25,15 @@ ApiEscuela/
 4. **AutoridadUTEQ** - Autoridades de la UTEQ
 5. **Institucion** - Instituciones educativas visitantes
 6. **ProgramaVisita** - Programas de visitas programadas
-7. **Actividad** - Actividades disponibles en las visitas
-8. **Tematica** - Temáticas de las actividades
-9. **VisitaDetalle** - Detalles de participación en visitas
-10. **Dudas** - Sistema de preguntas y respuestas
-11. **Usuario** - Usuarios del sistema con autenticación
-12. **TipoUsuario** - Tipos de usuarios del sistema
-13. **Ciudad** - Ciudades del país
-14. **Provincia** - Provincias del país
+7. **DetalleAutoridadDetallesVisita** - **🆕 Relación muchos-a-muchos entre programas y autoridades**
+8. **Actividad** - Actividades disponibles en las visitas
+9. **Tematica** - Temáticas de las actividades
+10. **VisitaDetalle** - Detalles de participación en visitas
+11. **Dudas** - Sistema de preguntas y respuestas
+12. **Usuario** - Usuarios del sistema con autenticación
+13. **TipoUsuario** - Tipos de usuarios del sistema
+14. **Ciudad** - Ciudades del país
+15. **Provincia** - Provincias del país
 
 ### Ejemplo de Modelo Principal
 
@@ -96,6 +97,15 @@ Base URL: `http://localhost:3000`
 - `GET /programas-visita/autoridad/:autoridad_id` - Filtrar por autoridad
 - `GET /programas-visita/institucion/:institucion_id` - Filtrar por institución
 - `GET /programas-visita/rango-fecha?inicio=2024-01-01&fin=2024-12-31` - **Rango de fechas**
+
+### 🔗 Detalle Autoridad Detalles Visita (🆕 Relación Muchos-a-Muchos)
+- `POST /detalle-autoridad-detalles-visita` - **Asignar autoridad a programa**
+- `GET /detalle-autoridad-detalles-visita` - Obtener todas las asignaciones
+- `GET /detalle-autoridad-detalles-visita/:id` - Obtener asignación por ID
+- `PUT /detalle-autoridad-detalles-visita/:id` - Actualizar asignación
+- `DELETE /detalle-autoridad-detalles-visita/:id` - Eliminar asignación
+- `GET /detalle-autoridad-detalles-visita/programa-visita/:programa_visita_id` - **Autoridades por programa**
+- `GET /detalle-autoridad-detalles-visita/autoridad/:autoridad_id` - **Programas por autoridad**
 
 ### 🎯 Actividades y Temáticas
 - `POST /actividades` - Crear actividad
@@ -207,8 +217,36 @@ Base URL: `http://localhost:3000`
 ```json
 {
   "fecha": "2024-03-15T09:00:00Z",
-  "autoridad_uteq_id": 1,
   "institucion_id": 1
+}
+```
+
+### 🆕 Detalle Autoridad Detalles Visita (Relación Muchos-a-Muchos)
+```json
+{
+  "programa_visita_id": 1,
+  "autoridad_uteq_id": 2
+}
+```
+
+**Ejemplo de Respuesta Completa**:
+```json
+{
+  "id": 1,
+  "programa_visita_id": 1,
+  "autoridad_uteq_id": 2,
+  "created_at": "2024-03-15T10:00:00Z",
+  "updated_at": "2024-03-15T10:00:00Z",
+  "programa_visita": {
+    "id": 1,
+    "fecha": "2024-03-15T09:00:00Z",
+    "institucion_id": 1
+  },
+  "autoridad_uteq": {
+    "id": 2,
+    "persona_id": 5,
+    "cargo": "Decano de Facultad"
+  }
 }
 ```
 
@@ -261,7 +299,7 @@ Base URL: `http://localhost:3000`
 El proyecto está configurado para conectarse a la base de datos de la UTEQ:
 
 ### Automigración
-El sistema crea automáticamente todas las 14 tablas con sus relaciones al iniciar.
+El sistema crea automáticamente todas las 15 tablas con sus relaciones al iniciar.
 
 ## ⚙️ Instalación y Ejecución
 
@@ -335,9 +373,27 @@ curl -X POST http://localhost:3000/estudiantes \
 curl -X POST http://localhost:3000/programas-visita \
   -d '{
     "fecha": "2024-03-15T09:00:00Z",
-    "autoridad_uteq_id": 1,
     "institucion_id": 1
   }'
+```
+
+### 🆕 Asignar Autoridad a Programa de Visita
+```bash
+curl -X POST http://localhost:3000/detalle-autoridad-detalles-visita \
+  -d '{
+    "programa_visita_id": 1,
+    "autoridad_uteq_id": 2
+  }'
+```
+
+### Obtener Autoridades de un Programa
+```bash
+curl http://localhost:3000/detalle-autoridad-detalles-visita/programa-visita/1
+```
+
+### Obtener Programas de una Autoridad
+```bash
+curl http://localhost:3000/detalle-autoridad-detalles-visita/autoridad/2
 ```
 
 ### Crear un Usuario
@@ -452,7 +508,7 @@ curl "http://localhost:3000/programas-visita/rango-fecha?inicio=2024-01-01&fin=2
 - **Routers**: Configuración consolidada de rutas
 
 ### Características Técnicas
-- **CRUD Completo**: Para todas las 14 entidades
+- **CRUD Completo**: Para todas las 15 entidades
 - **Relaciones Complejas**: Preloading automático de relaciones
 - **Filtros Avanzados**: Búsquedas por múltiples criterios
 - **Validación**: Validación de datos de entrada
