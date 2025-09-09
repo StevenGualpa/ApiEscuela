@@ -41,7 +41,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	ciudades := app.Group("/ciudades")
 	ciudades.Post("/", handlers.CiudadHandler.CreateCiudad)
 	ciudades.Get("/", handlers.CiudadHandler.GetAllCiudades)
-	ciudades.Get("/:id", handlers.CiudadHandler.GetCiudad)
+	//ciudades.Get("/:id", handlers.CiudadHandler.GetCiudad)
 	ciudades.Put("/:id", handlers.CiudadHandler.UpdateCiudad)
 	ciudades.Delete("/:id", handlers.CiudadHandler.DeleteCiudad)
 	ciudades.Get("/provincia/:provincia_id", handlers.CiudadHandler.GetCiudadesByProvincia)
