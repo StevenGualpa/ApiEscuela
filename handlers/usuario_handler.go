@@ -104,7 +104,7 @@ func (h *UsuarioHandler) UpdateUsuario(c *fiber.Ctx) error {
 	}
 
 	// No devolver la contraseña
-	//usuario.Contraseña = ""
+	usuario.Contraseña = ""
 	return c.JSON(usuario)
 }
 
