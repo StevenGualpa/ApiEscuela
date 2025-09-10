@@ -158,8 +158,18 @@ Base URL: `http://localhost:3000`
 ### 🏫 Instituciones y Autoridades
 - `GET /instituciones` - Obtener todas las instituciones
 - `GET /instituciones/nombre/:nombre` - Buscar por nombre
-- `GET /autoridades-uteq` - Obtener autoridades UTEQ
+
+### 🎓 Autoridades UTEQ
+- `POST /autoridades-uteq` - Crear autoridad UTEQ
+- `GET /autoridades-uteq` - Obtener todas las autoridades activas
+- `GET /autoridades-uteq/all-including-deleted` - **📋 Obtener todas las autoridades (activas + eliminadas)** (NUEVO)
+- `GET /autoridades-uteq/deleted` - **🗑️ Obtener solo autoridades eliminadas** (NUEVO)
+- `GET /autoridades-uteq/:id` - Obtener autoridad por ID
+- `PUT /autoridades-uteq/:id` - Actualizar autoridad
+- `DELETE /autoridades-uteq/:id` - **🗑️ Eliminar autoridad, usuario y persona en cascada** (NUEVO)
+- `PUT /autoridades-uteq/:id/restore` - **♻️ Restaurar autoridad, usuario y persona en cascada** (NUEVO)
 - `GET /autoridades-uteq/cargo/:cargo` - Filtrar por cargo
+- `GET /autoridades-uteq/persona/:persona_id` - Filtrar por persona
 
 ## 📋 Estructuras JSON de los Modelos
 
@@ -557,6 +567,121 @@ curl http://localhost:3000/estudiantes
 curl http://localhost:3000/estudiantes/deleted
 ```
 
+### 🆕 Gestión de Autoridades UTEQ con Eliminación en Cascada
+
+### Crear una Autoridad UTEQ
+```bash
+curl -X POST http://localhost:3000/autoridades-uteq \
+  -d '{
+    "persona_id": 3,
+    "cargo": "Decano de Facultad de Ingeniería"
+  }'
+```
+
+### Eliminar Autoridad UTEQ (Cascada: Autoridad + Usuario + Persona)
+```bash
+# Elimina la autoridad y automáticamente elimina su usuario y persona asociada
+curl -X DELETE http://localhost:3000/autoridades-uteq/2
+```
+
+**Respuesta**:
+```json
+{
+  "message": "Autoridad UTEQ, usuario y persona eliminados exitosamente"
+}
+```
+
+### Restaurar Autoridad UTEQ (Cascada: Autoridad + Usuario + Persona)
+```bash
+# Restaura la autoridad y automáticamente restaura su usuario y persona asociada
+curl -X PUT http://localhost:3000/autoridades-uteq/2/restore
+```
+
+**Respuesta**:
+```json
+{
+  "message": "Autoridad UTEQ, usuario y persona restaurados exitosamente"
+}
+```
+
+### Obtener Todas las Autoridades (Incluyendo Eliminadas)
+```bash
+curl http://localhost:3000/autoridades-uteq/all-including-deleted
+```
+
+### Obtener Solo Autoridades Eliminadas
+```bash
+curl http://localhost:3000/autoridades-uteq/deleted
+```
+
+### Ejemplo de Flujo Completo de Gestión de Autoridades UTEQ Eliminadas
+```bash
+# 1. Crear una persona para la autoridad
+curl -X POST http://localhost:3000/personas \
+  -d '{
+    "nombre": "Dr. Carlos Mendoza",
+    "cedula": "1234567890",
+    "correo": "carlos.mendoza@uteq.edu.ec",
+    "telefono": "0987654321",
+    "fecha_nacimiento": "1975-03-10T00:00:00Z"
+  }'
+
+# 2. Crear un usuario para esa persona
+curl -X POST http://localhost:3000/usuarios \
+  -d '{
+    "usuario": "cmendoza",
+    "contraseña": "password123",
+    "persona_id": 3,
+    "tipo_usuario_id": 2
+  }'
+
+# 3. Crear una autoridad UTEQ para esa persona
+curl -X POST http://localhost:3000/autoridades-uteq \
+  -d '{
+    "persona_id": 3,
+    "cargo": "Decano de Facultad de Ingeniería"
+  }'
+
+# 4. Obtener todas las autoridades activas
+curl http://localhost:3000/autoridades-uteq
+
+# 5. Eliminar la autoridad (cascada: autoridad + usuario + persona)
+curl -X DELETE http://localhost:3000/autoridades-uteq/2
+
+# 6. Verificar que ya no aparece en autoridades activas
+curl http://localhost:3000/autoridades-uteq
+
+# 7. Verificar que aparece en autoridades eliminadas
+curl http://localhost:3000/autoridades-uteq/deleted
+
+# 8. Obtener todas las autoridades incluyendo eliminadas
+curl http://localhost:3000/autoridades-uteq/all-including-deleted
+
+# 9. Restaurar la autoridad eliminada
+curl -X PUT http://localhost:3000/autoridades-uteq/2/restore
+
+# 10. Verificar que vuelve a aparecer en autoridades activas
+curl http://localhost:3000/autoridades-uteq
+
+# 11. Verificar que ya no aparece en autoridades eliminadas
+curl http://localhost:3000/autoridades-uteq/deleted
+
+# 12. Verificar que todo fue restaurado correctamente
+curl http://localhost:3000/autoridades-uteq/2
+curl http://localhost:3000/usuarios/3
+curl http://localhost:3000/personas/3
+```
+
+### Filtrar Autoridades por Cargo
+```bash
+curl http://localhost:3000/autoridades-uteq/cargo/Decano
+```
+
+### Obtener Autoridad por Persona
+```bash
+curl http://localhost:3000/autoridades-uteq/persona/3
+```
+
 ### Crear una Provincia
 ```bash
 curl -X POST http://localhost:3000/provincias \
@@ -700,6 +825,22 @@ curl "http://localhost:3000/programas-visita/rango-fecha?inicio=2024-01-01&fin=2
 - **🛡️ Rollback Automático**: Si alguna operación falla, se deshacen todos los cambios
 - **💾 Soft Delete**: Los datos no se eliminan físicamente, solo se marcan como eliminados
 - **🔍 Recuperación Completa**: La restauración recupera todos los datos relacionados
+
+### 🆕 Gestión de Autoridades UTEQ con Eliminación en Cascada
+- **🔗 Eliminación en Cascada**: Al eliminar una autoridad UTEQ, automáticamente se eliminan:
+  - El registro de la autoridad UTEQ
+  - Todos los usuarios asociados a la persona de la autoridad
+  - El registro de la persona de la autoridad
+- **♻️ Restauración en Cascada**: Al restaurar una autoridad UTEQ, automáticamente se restauran:
+  - El registro de la autoridad UTEQ
+  - Todos los usuarios asociados a la persona
+  - El registro de la persona
+- **🔒 Transacciones**: Todas las operaciones usan transacciones para garantizar integridad
+- **🛡️ Rollback Autom��tico**: Si alguna operación falla, se deshacen todos los cambios
+- **💾 Soft Delete**: Los datos no se eliminan físicamente, solo se marcan como eliminados
+- **🔍 Recuperación Completa**: La restauración recupera todos los datos relacionados
+- **📋 Auditoría**: Visualización de autoridades eliminadas para control administrativo
+- **🎯 Filtros Avanzados**: Búsqueda por cargo y persona
 
 ### ❓ Sistema de Dudas
 - Creación de dudas por estudiantes
