@@ -59,7 +59,9 @@ Base URL: `http://localhost:3000`
 
 ### 📚 Estudiantes
 - `POST /estudiantes` - Crear estudiante
-- `GET /estudiantes` - Obtener todos los estudiantes
+- `GET /estudiantes` - Obtener todos los estudiantes activos
+- `GET /estudiantes/all-including-deleted` - **📋 Obtener todos los estudiantes (activos + eliminados)** (NUEVO)
+- `GET /estudiantes/deleted` - **🗑️ Obtener solo estudiantes eliminados** (NUEVO)
 - `GET /estudiantes/:id` - Obtener estudiante por ID
 - `PUT /estudiantes/:id` - Actualizar estudiante
 - `DELETE /estudiantes/:id` - **🗑️ Eliminar estudiante, usuario y persona en cascada**
@@ -514,6 +516,45 @@ curl -X PUT http://localhost:3000/estudiantes/2/restore
 curl http://localhost:3000/estudiantes/2
 curl http://localhost:3000/usuarios/2
 curl http://localhost:3000/personas/2
+```
+
+### 🆕 Gestión Completa de Estudiantes Eliminados (Similar a Usuarios)
+
+### Obtener Todos los Estudiantes (Incluyendo Eliminados)
+```bash
+curl http://localhost:3000/estudiantes/all-including-deleted
+```
+
+### Obtener Solo Estudiantes Eliminados
+```bash
+curl http://localhost:3000/estudiantes/deleted
+```
+
+### Ejemplo de Flujo Completo de Gestión de Estudiantes Eliminados
+```bash
+# 1. Obtener todos los estudiantes activos
+curl http://localhost:3000/estudiantes
+
+# 2. Eliminar un estudiante (cascada: estudiante + usuario + persona)
+curl -X DELETE http://localhost:3000/estudiantes/3
+
+# 3. Verificar que ya no aparece en estudiantes activos
+curl http://localhost:3000/estudiantes
+
+# 4. Verificar que aparece en estudiantes eliminados
+curl http://localhost:3000/estudiantes/deleted
+
+# 5. Obtener todos los estudiantes incluyendo eliminados
+curl http://localhost:3000/estudiantes/all-including-deleted
+
+# 6. Restaurar el estudiante eliminado
+curl -X PUT http://localhost:3000/estudiantes/3/restore
+
+# 7. Verificar que vuelve a aparecer en estudiantes activos
+curl http://localhost:3000/estudiantes
+
+# 8. Verificar que ya no aparece en estudiantes eliminados
+curl http://localhost:3000/estudiantes/deleted
 ```
 
 ### Crear una Provincia
