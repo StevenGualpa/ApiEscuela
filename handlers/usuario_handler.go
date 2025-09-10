@@ -90,12 +90,15 @@ func (h *UsuarioHandler) UpdateUsuario(c *fiber.Ctx) error {
 			"error": "Usuario no encontrado",
 		})
 	}
-
+	originalID := usuario.ID
+    originalCreatedAt := usuario.CreatedAt
 	if err := c.BodyParser(usuario); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "No se puede procesar el JSON",
 		})
 	}
+	usuario.ID = originalID
+    usuario.CreatedAt = originalCreatedAt
 
 	if err := h.usuarioRepo.UpdateUsuario(usuario); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
