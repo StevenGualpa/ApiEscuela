@@ -54,12 +54,36 @@ func (h *EstudianteHandler) GetEstudiante(c *fiber.Ctx) error {
 	return c.JSON(estudiante)
 }
 
-// GetAllEstudiantes obtiene todos los estudiantes
+// GetAllEstudiantes obtiene todos los estudiantes activos
 func (h *EstudianteHandler) GetAllEstudiantes(c *fiber.Ctx) error {
 	estudiantes, err := h.estudianteRepo.GetAllEstudiantes()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "No se pueden obtener los estudiantes",
+		})
+	}
+
+	return c.JSON(estudiantes)
+}
+
+// GetAllEstudiantesIncludingDeleted obtiene todos los estudiantes incluyendo los eliminados
+func (h *EstudianteHandler) GetAllEstudiantesIncludingDeleted(c *fiber.Ctx) error {
+	estudiantes, err := h.estudianteRepo.GetAllEstudiantesIncludingDeleted()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener los estudiantes",
+		})
+	}
+
+	return c.JSON(estudiantes)
+}
+
+// GetDeletedEstudiantes obtiene solo los estudiantes eliminados
+func (h *EstudianteHandler) GetDeletedEstudiantes(c *fiber.Ctx) error {
+	estudiantes, err := h.estudianteRepo.GetDeletedEstudiantes()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener los estudiantes eliminados",
 		})
 	}
 

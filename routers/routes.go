@@ -11,6 +11,8 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	estudiantes := app.Group("/estudiantes")
 	estudiantes.Post("/", handlers.EstudianteHandler.CreateEstudiante)
 	estudiantes.Get("/", handlers.EstudianteHandler.GetAllEstudiantes)
+	estudiantes.Get("/all-including-deleted", handlers.EstudianteHandler.GetAllEstudiantesIncludingDeleted)
+	estudiantes.Get("/deleted", handlers.EstudianteHandler.GetDeletedEstudiantes)
 	estudiantes.Get("/:id", handlers.EstudianteHandler.GetEstudiante)
 	estudiantes.Put("/:id", handlers.EstudianteHandler.UpdateEstudiante)
 	estudiantes.Delete("/:id", handlers.EstudianteHandler.DeleteEstudiante)

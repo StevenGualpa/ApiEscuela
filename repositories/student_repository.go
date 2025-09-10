@@ -126,6 +126,25 @@ func (r *EstudianteRepository) RestoreEstudiante(id uint) error {
 	return tx.Commit().Error
 }
 
+// GetAllEstudiantesIncludingDeleted obtiene todos los estudiantes incluyendo los eliminados
+func (r *EstudianteRepository) GetAllEstudiantesIncludingDeleted() ([]models.Estudiante, error) {
+	var estudiantes []models.Estudiante
+	err := r.db.Unscoped().Preload("Persona").Preload("Institucion").
+		Preload("Ciudad").Preload("Ciudad.Provincia").
+		Find(&estudiantes).Error
+	return estudiantes, err
+}
+
+// GetDeletedEstudiantes obtiene solo los estudiantes eliminados
+func (r *EstudianteRepository) GetDeletedEstudiantes() ([]models.Estudiante, error) {
+	var estudiantes []models.Estudiante
+	err := r.db.Unscoped().Where("deleted_at IS NOT NULL").
+		Preload("Persona").Preload("Institucion").
+		Preload("Ciudad").Preload("Ciudad.Provincia").
+		Find(&estudiantes).Error
+	return estudiantes, err
+}
+
 // GetEstudiantesByCity obtiene estudiantes por ciudad
 func (r *EstudianteRepository) GetEstudiantesByCity(ciudadID uint) ([]models.Estudiante, error) {
 	var estudiantes []models.Estudiante
