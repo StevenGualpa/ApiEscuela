@@ -62,7 +62,8 @@ Base URL: `http://localhost:3000`
 - `GET /estudiantes` - Obtener todos los estudiantes
 - `GET /estudiantes/:id` - Obtener estudiante por ID
 - `PUT /estudiantes/:id` - Actualizar estudiante
-- `DELETE /estudiantes/:id` - Eliminar estudiante
+- `DELETE /estudiantes/:id` - **🗑️ Eliminar estudiante, usuario y persona en cascada**
+- `PUT /estudiantes/:id/restore` - **♻️ Restaurar estudiante, usuario y persona en cascada** (NUEVO)
 - `GET /estudiantes/ciudad/:ciudad_id` - Filtrar por ciudad
 - `GET /estudiantes/institucion/:institucion_id` - Filtrar por institución
 - `GET /estudiantes/especialidad/:especialidad` - Filtrar por especialidad
@@ -442,6 +443,79 @@ curl -X PUT http://localhost:3000/usuarios/5/restore
 curl http://localhost:3000/usuarios/5
 ```
 
+### 🆕 Gestión de Estudiantes con Eliminación en Cascada
+
+### Eliminar Estudiante (Cascada: Estudiante + Usuario + Persona)
+```bash
+# Elimina el estudiante y automáticamente elimina su usuario y persona asociada
+curl -X DELETE http://localhost:3000/estudiantes/3
+```
+
+**Respuesta**:
+```json
+{
+  "message": "Estudiante, usuario y persona eliminados exitosamente"
+}
+```
+
+### Restaurar Estudiante (Cascada: Estudiante + Usuario + Persona)
+```bash
+# Restaura el estudiante y automáticamente restaura su usuario y persona asociada
+curl -X PUT http://localhost:3000/estudiantes/3/restore
+```
+
+**Respuesta**:
+```json
+{
+  "message": "Estudiante, usuario y persona restaurados exitosamente"
+}
+```
+
+### Ejemplo de Flujo Completo de Eliminación/Restauración en Cascada
+```bash
+# 1. Crear una persona
+curl -X POST http://localhost:3000/personas \
+  -d '{
+    "nombre": "María González",
+    "cedula": "0987654321",
+    "correo": "maria.gonzalez@email.com",
+    "telefono": "0987654321",
+    "fecha_nacimiento": "1995-08-20T00:00:00Z"
+  }'
+
+# 2. Crear un usuario para esa persona
+curl -X POST http://localhost:3000/usuarios \
+  -d '{
+    "usuario": "mgonzalez",
+    "contraseña": "password123",
+    "persona_id": 2,
+    "tipo_usuario_id": 1
+  }'
+
+# 3. Crear un estudiante para esa persona
+curl -X POST http://localhost:3000/estudiantes \
+  -d '{
+    "persona_id": 2,
+    "institucion_id": 1,
+    "ciudad_id": 1,
+    "especialidad": "Ingeniería Ambiental"
+  }'
+
+# 4. Eliminar el estudiante (elimina automáticamente usuario y persona)
+curl -X DELETE http://localhost:3000/estudiantes/2
+
+# 5. Verificar que el usuario también fue eliminado
+curl http://localhost:3000/usuarios/deleted
+
+# 6. Restaurar el estudiante (restaura automáticamente usuario y persona)
+curl -X PUT http://localhost:3000/estudiantes/2/restore
+
+# 7. Verificar que todo fue restaurado correctamente
+curl http://localhost:3000/estudiantes/2
+curl http://localhost:3000/usuarios/2
+curl http://localhost:3000/personas/2
+```
+
 ### Crear una Provincia
 ```bash
 curl -X POST http://localhost:3000/provincias \
@@ -571,6 +645,20 @@ curl "http://localhost:3000/programas-visita/rango-fecha?inicio=2024-01-01&fin=2
 - **🗑️ Soft Delete**: Eliminación segura con posibilidad de restauración
 - **♻️ Restauración**: Recuperación de usuarios eliminados accidentalmente
 - **📋 Auditoría**: Visualización de usuarios eliminados para control administrativo
+
+### 🆕 Gestión de Estudiantes con Eliminación en Cascada
+- **🔗 Eliminación en Cascada**: Al eliminar un estudiante, automáticamente se eliminan:
+  - El registro del estudiante
+  - Todos los usuarios asociados a la persona del estudiante
+  - El registro de la persona del estudiante
+- **♻️ Restauración en Cascada**: Al restaurar un estudiante, automáticamente se restauran:
+  - El registro del estudiante
+  - Todos los usuarios asociados a la persona
+  - El registro de la persona
+- **🔒 Transacciones**: Todas las operaciones usan transacciones para garantizar integridad
+- **🛡️ Rollback Automático**: Si alguna operación falla, se deshacen todos los cambios
+- **💾 Soft Delete**: Los datos no se eliminan físicamente, solo se marcan como eliminados
+- **🔍 Recuperación Completa**: La restauración recupera todos los datos relacionados
 
 ### ❓ Sistema de Dudas
 - Creación de dudas por estudiantes
