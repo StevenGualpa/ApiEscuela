@@ -54,12 +54,36 @@ func (h *AutoridadUTEQHandler) GetAutoridadUTEQ(c *fiber.Ctx) error {
 	return c.JSON(autoridad)
 }
 
-// GetAllAutoridadesUTEQ obtiene todas las autoridades UTEQ
+// GetAllAutoridadesUTEQ obtiene todas las autoridades UTEQ activas
 func (h *AutoridadUTEQHandler) GetAllAutoridadesUTEQ(c *fiber.Ctx) error {
 	autoridades, err := h.autoridadRepo.GetAllAutoridadesUTEQ()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "No se pueden obtener las autoridades UTEQ",
+		})
+	}
+
+	return c.JSON(autoridades)
+}
+
+// GetAllAutoridadesUTEQIncludingDeleted obtiene todas las autoridades UTEQ incluyendo las eliminadas
+func (h *AutoridadUTEQHandler) GetAllAutoridadesUTEQIncludingDeleted(c *fiber.Ctx) error {
+	autoridades, err := h.autoridadRepo.GetAllAutoridadesUTEQIncludingDeleted()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener las autoridades UTEQ",
+		})
+	}
+
+	return c.JSON(autoridades)
+}
+
+// GetDeletedAutoridadesUTEQ obtiene solo las autoridades UTEQ eliminadas
+func (h *AutoridadUTEQHandler) GetDeletedAutoridadesUTEQ(c *fiber.Ctx) error {
+	autoridades, err := h.autoridadRepo.GetDeletedAutoridadesUTEQ()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener las autoridades UTEQ eliminadas",
 		})
 	}
 
@@ -97,7 +121,7 @@ func (h *AutoridadUTEQHandler) UpdateAutoridadUTEQ(c *fiber.Ctx) error {
 	return c.JSON(autoridad)
 }
 
-// DeleteAutoridadUTEQ elimina una autoridad UTEQ
+// DeleteAutoridadUTEQ elimina una autoridad UTEQ y en cascada su usuario y persona
 func (h *AutoridadUTEQHandler) DeleteAutoridadUTEQ(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -108,12 +132,32 @@ func (h *AutoridadUTEQHandler) DeleteAutoridadUTEQ(c *fiber.Ctx) error {
 
 	if err := h.autoridadRepo.DeleteAutoridadUTEQ(uint(id)); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede eliminar la autoridad UTEQ",
+			"error": "No se puede eliminar la autoridad UTEQ y sus datos relacionados",
 		})
 	}
 
 	return c.JSON(fiber.Map{
-		"message": "Autoridad UTEQ eliminada exitosamente",
+		"message": "Autoridad UTEQ, usuario y persona eliminados exitosamente",
+	})
+}
+
+// RestoreAutoridadUTEQ restaura una autoridad UTEQ eliminada y en cascada su usuario y persona
+func (h *AutoridadUTEQHandler) RestoreAutoridadUTEQ(c *fiber.Ctx) error {
+	id, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "ID de autoridad UTEQ inválido",
+		})
+	}
+
+	if err := h.autoridadRepo.RestoreAutoridadUTEQ(uint(id)); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se puede restaurar la autoridad UTEQ y sus datos relacionados",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Autoridad UTEQ, usuario y persona restaurados exitosamente",
 	})
 }
 

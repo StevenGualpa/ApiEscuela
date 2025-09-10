@@ -98,9 +98,12 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	autoridades := app.Group("/autoridades-uteq")
 	autoridades.Post("/", handlers.AutoridadHandler.CreateAutoridadUTEQ)
 	autoridades.Get("/", handlers.AutoridadHandler.GetAllAutoridadesUTEQ)
+	autoridades.Get("/all-including-deleted", handlers.AutoridadHandler.GetAllAutoridadesUTEQIncludingDeleted)
+	autoridades.Get("/deleted", handlers.AutoridadHandler.GetDeletedAutoridadesUTEQ)
 	autoridades.Get("/:id", handlers.AutoridadHandler.GetAutoridadUTEQ)
 	autoridades.Put("/:id", handlers.AutoridadHandler.UpdateAutoridadUTEQ)
 	autoridades.Delete("/:id", handlers.AutoridadHandler.DeleteAutoridadUTEQ)
+	autoridades.Put("/:id/restore", handlers.AutoridadHandler.RestoreAutoridadUTEQ)
 	autoridades.Get("/cargo/:cargo", handlers.AutoridadHandler.GetAutoridadesUTEQByCargo)
 	autoridades.Get("/persona/:persona_id", handlers.AutoridadHandler.GetAutoridadUTEQByPersona)
 
