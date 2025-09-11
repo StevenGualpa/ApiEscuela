@@ -19,7 +19,7 @@ func NewDudasHandler(dudasRepo *repositories.DudasRepository) *DudasHandler {
 // CreateDudas crea una nueva duda
 func (h *DudasHandler) CreateDudas(c *fiber.Ctx) error {
 	var duda models.Dudas
-	
+
 	if err := c.BodyParser(&duda); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "No se puede procesar el JSON",
@@ -125,7 +125,7 @@ func (h *DudasHandler) GetDudasByEstudiante(c *fiber.Ctx) error {
 			"error": "ID de estudiante inválido",
 		})
 	}
-	
+
 	dudas, err := h.dudasRepo.GetDudasByEstudiante(uint(estudianteID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -144,7 +144,7 @@ func (h *DudasHandler) GetDudasByAutoridad(c *fiber.Ctx) error {
 			"error": "ID de autoridad inválido",
 		})
 	}
-	
+
 	dudas, err := h.dudasRepo.GetDudasByAutoridad(uint(autoridadID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -194,7 +194,7 @@ func (h *DudasHandler) GetDudasSinAsignar(c *fiber.Ctx) error {
 // BuscarDudasPorPregunta busca dudas por contenido de la pregunta
 func (h *DudasHandler) BuscarDudasPorPregunta(c *fiber.Ctx) error {
 	termino := c.Params("termino")
-	
+
 	dudas, err := h.dudasRepo.BuscarDudasPorPregunta(termino)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -265,34 +265,10 @@ func (h *DudasHandler) ResponderDuda(c *fiber.Ctx) error {
 	})
 }
 
-// GetDudasPublicas obtiene todas las dudas públicas
-func (h *DudasHandler) GetDudasPublicas(c *fiber.Ctx) error {
-	dudas, err := h.dudasRepo.GetDudasByPrivacidad("publico")
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se pueden obtener las dudas públicas",
-		})
-	}
-
-	return c.JSON(dudas)
-}
-
-// GetDudasPrivadas obtiene todas las dudas privadas
-func (h *DudasHandler) GetDudasPrivadas(c *fiber.Ctx) error {
-	dudas, err := h.dudasRepo.GetDudasByPrivacidad("privado")
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se pueden obtener las dudas privadas",
-		})
-	}
-
-	return c.JSON(dudas)
-}
-
 // GetDudasByPrivacidad obtiene dudas por tipo de privacidad
 func (h *DudasHandler) GetDudasByPrivacidad(c *fiber.Ctx) error {
 	privacidad := c.Params("privacidad")
-	
+
 	// Validar que el parámetro sea válido
 	if privacidad != "privado" && privacidad != "publico" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
