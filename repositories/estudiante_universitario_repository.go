@@ -21,7 +21,7 @@ func (r *EstudianteUniversitarioRepository) CreateEstudianteUniversitario(estudi
 // GetEstudianteUniversitarioByID obtiene un estudiante universitario por ID
 func (r *EstudianteUniversitarioRepository) GetEstudianteUniversitarioByID(id uint) (*models.EstudianteUniversitario, error) {
 	var estudiante models.EstudianteUniversitario
-	err := r.db.Preload("Persona").Preload("VisitaDetalles").
+	err := r.db.Preload("Persona").Preload("VisitaDetalleEstudiantesUniversitarios").
 		First(&estudiante, id).Error
 	if err != nil {
 		return nil, err
@@ -32,7 +32,7 @@ func (r *EstudianteUniversitarioRepository) GetEstudianteUniversitarioByID(id ui
 // GetAllEstudiantesUniversitarios obtiene todos los estudiantes universitarios
 func (r *EstudianteUniversitarioRepository) GetAllEstudiantesUniversitarios() ([]models.EstudianteUniversitario, error) {
 	var estudiantes []models.EstudianteUniversitario
-	err := r.db.Preload("Persona").Preload("VisitaDetalles").
+	err := r.db.Preload("Persona").Preload("VisitaDetalleEstudiantesUniversitarios").
 		Find(&estudiantes).Error
 	return estudiantes, err
 }
@@ -51,7 +51,7 @@ func (r *EstudianteUniversitarioRepository) DeleteEstudianteUniversitario(id uin
 func (r *EstudianteUniversitarioRepository) GetEstudiantesUniversitariosBySemestre(semestre int) ([]models.EstudianteUniversitario, error) {
 	var estudiantes []models.EstudianteUniversitario
 	err := r.db.Where("semestre = ?", semestre).
-		Preload("Persona").Preload("VisitaDetalles").
+		Preload("Persona").Preload("VisitaDetalleEstudiantesUniversitarios").
 		Find(&estudiantes).Error
 	return estudiantes, err
 }
@@ -60,7 +60,7 @@ func (r *EstudianteUniversitarioRepository) GetEstudiantesUniversitariosBySemest
 func (r *EstudianteUniversitarioRepository) GetEstudianteUniversitarioByPersona(personaID uint) (*models.EstudianteUniversitario, error) {
 	var estudiante models.EstudianteUniversitario
 	err := r.db.Where("persona_id = ?", personaID).
-		Preload("Persona").Preload("VisitaDetalles").
+		Preload("Persona").Preload("VisitaDetalleEstudiantesUniversitarios").
 		First(&estudiante).Error
 	if err != nil {
 		return nil, err
