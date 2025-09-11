@@ -67,7 +67,7 @@ func main() {
 
 	// Configurar conexión a la base de datos
 	var dsn string
-	
+
 	// Intentar usar DATABASE_URL primero (para producción/Neon)
 	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
 		dsn = databaseURL
@@ -79,7 +79,7 @@ func main() {
 		dsn = "postgresql://neondb_owner:npg_UkVLzt5h0Zyx@ep-noisy-heart-aehgd4hl-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 		log.Printf("Usando configuración Neon por defecto para conexión a la base de datos")
 	}
-	
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Error al conectar con la base de datos: %v", err)
@@ -102,6 +102,7 @@ func main() {
 		&models.DetalleAutoridadDetallesVisita{},
 		&models.VisitaDetalle{},
 		&models.Dudas{},
+		&models.VisitaDetalleEstudiantesUniversitarios{},
 	); err != nil {
 		log.Fatalf("Error en la automigración: %v", err)
 	}
