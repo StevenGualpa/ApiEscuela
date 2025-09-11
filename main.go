@@ -123,6 +123,7 @@ func main() {
 	detalleAutoridadDetallesVisitaRepo := repositories.NewDetalleAutoridadDetallesVisitaRepository(db)
 	visitaDetalleRepo := repositories.NewVisitaDetalleRepository(db)
 	dudasRepo := repositories.NewDudasRepository(db)
+	visitaDetalleEstudiantesUniversitariosRepo := repositories.NewVisitaDetalleEstudiantesUniversitariosRepository(db)
 
 	// Inicializar handlers
 	estudianteHandler := handlers.NewEstudianteHandler(estudianteRepo)
@@ -140,6 +141,7 @@ func main() {
 	detalleAutoridadDetallesVisitaHandler := handlers.NewDetalleAutoridadDetallesVisitaHandler(detalleAutoridadDetallesVisitaRepo)
 	visitaDetalleHandler := handlers.NewVisitaDetalleHandler(visitaDetalleRepo)
 	dudasHandler := handlers.NewDudasHandler(dudasRepo)
+	visitaDetalleEstudiantesUniversitariosHandler := handlers.NewVisitaDetalleEstudiantesUniversitariosHandler(visitaDetalleEstudiantesUniversitariosRepo)
 
 	// Crear contenedor de todos los handlers
 	allHandlers := routers.NewAllHandlers(
@@ -158,6 +160,7 @@ func main() {
 		detalleAutoridadDetallesVisitaHandler,
 		visitaDetalleHandler,
 		dudasHandler,
+		visitaDetalleEstudiantesUniversitariosHandler,
 	)
 
 	// Configurar todas las rutas

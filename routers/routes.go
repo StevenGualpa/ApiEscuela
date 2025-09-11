@@ -178,6 +178,19 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	dudas.Get("/buscar/:termino", handlers.DudasHandler.BuscarDudasPorPregunta)
 	dudas.Put("/:duda_id/asignar", handlers.DudasHandler.AsignarAutoridadADuda)
 	dudas.Put("/:duda_id/responder", handlers.DudasHandler.ResponderDuda)
+
+	// ==================== VISITA DETALLE ESTUDIANTES UNIVERSITARIOS ====================
+	visitaDetalleEstudiantes := app.Group("/visita-detalle-estudiantes-universitarios")
+	visitaDetalleEstudiantes.Post("/", handlers.VisitaDetalleEstudiantesUniversitariosHandler.CreateVisitaDetalleEstudiantesUniversitarios)
+	visitaDetalleEstudiantes.Get("/", handlers.VisitaDetalleEstudiantesUniversitariosHandler.GetAllVisitaDetalleEstudiantesUniversitarios)
+	visitaDetalleEstudiantes.Get("/:id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.GetVisitaDetalleEstudiantesUniversitarios)
+	visitaDetalleEstudiantes.Put("/:id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.UpdateVisitaDetalleEstudiantesUniversitarios)
+	visitaDetalleEstudiantes.Delete("/:id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.DeleteVisitaDetalleEstudiantesUniversitarios)
+	visitaDetalleEstudiantes.Get("/programa-visita/:programa_visita_id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.GetEstudiantesByProgramaVisita)
+	visitaDetalleEstudiantes.Get("/estudiante/:estudiante_id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.GetProgramasVisitaByEstudiante)
+	visitaDetalleEstudiantes.Delete("/programa-visita/:programa_visita_id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.DeleteByProgramaVisita)
+	visitaDetalleEstudiantes.Delete("/estudiante/:estudiante_id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.DeleteByEstudiante)
+	visitaDetalleEstudiantes.Get("/estadisticas", handlers.VisitaDetalleEstudiantesUniversitariosHandler.GetEstadisticasParticipacion)
 }
 
 // AllHandlers contiene todos los handlers de la aplicación
@@ -197,6 +210,7 @@ type AllHandlers struct {
 	DetalleAutoridadDetallesVisitaHandler  *handlers.DetalleAutoridadDetallesVisitaHandler
 	VisitaDetalleHandler                   *handlers.VisitaDetalleHandler
 	DudasHandler                           *handlers.DudasHandler
+	VisitaDetalleEstudiantesUniversitariosHandler *handlers.VisitaDetalleEstudiantesUniversitariosHandler
 }
 
 // NewAllHandlers crea una instancia con todos los handlers
@@ -216,6 +230,7 @@ func NewAllHandlers(
 	detalleAutoridadDetallesVisitaHandler *handlers.DetalleAutoridadDetallesVisitaHandler,
 	visitaDetalleHandler *handlers.VisitaDetalleHandler,
 	dudasHandler *handlers.DudasHandler,
+	visitaDetalleEstudiantesUniversitariosHandler *handlers.VisitaDetalleEstudiantesUniversitariosHandler,
 ) *AllHandlers {
 	return &AllHandlers{
 		EstudianteHandler:                     estudianteHandler,
@@ -233,5 +248,6 @@ func NewAllHandlers(
 		DetalleAutoridadDetallesVisitaHandler: detalleAutoridadDetallesVisitaHandler,
 		VisitaDetalleHandler:                  visitaDetalleHandler,
 		DudasHandler:                          dudasHandler,
+		VisitaDetalleEstudiantesUniversitariosHandler: visitaDetalleEstudiantesUniversitariosHandler,
 	}
 }
