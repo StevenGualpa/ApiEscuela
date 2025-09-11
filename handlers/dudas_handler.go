@@ -264,3 +264,48 @@ func (h *DudasHandler) ResponderDuda(c *fiber.Ctx) error {
 		"message": "Duda respondida exitosamente",
 	})
 }
+
+// GetDudasPublicas obtiene todas las dudas públicas
+func (h *DudasHandler) GetDudasPublicas(c *fiber.Ctx) error {
+	dudas, err := h.dudasRepo.GetDudasByPrivacidad("publico")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener las dudas públicas",
+		})
+	}
+
+	return c.JSON(dudas)
+}
+
+// GetDudasPrivadas obtiene todas las dudas privadas
+func (h *DudasHandler) GetDudasPrivadas(c *fiber.Ctx) error {
+	dudas, err := h.dudasRepo.GetDudasByPrivacidad("privado")
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener las dudas privadas",
+		})
+	}
+
+	return c.JSON(dudas)
+}
+
+// GetDudasByPrivacidad obtiene dudas por tipo de privacidad
+func (h *DudasHandler) GetDudasByPrivacidad(c *fiber.Ctx) error {
+	privacidad := c.Params("privacidad")
+	
+	// Validar que el parámetro sea válido
+	if privacidad != "privado" && privacidad != "publico" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Tipo de privacidad inválido. Debe ser 'privado' o 'publico'",
+		})
+	}
+
+	dudas, err := h.dudasRepo.GetDudasByPrivacidad(privacidad)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "No se pueden obtener las dudas",
+		})
+	}
+
+	return c.JSON(dudas)
+}

@@ -136,3 +136,14 @@ func (r *DudasRepository) ResponderDuda(dudaID uint, respuesta string) error {
 			"fecha_respuesta":  &now,
 		}).Error
 }
+
+// GetDudasByPrivacidad obtiene dudas por tipo de privacidad
+func (r *DudasRepository) GetDudasByPrivacidad(privacidad string) ([]models.Dudas, error) {
+	var dudas []models.Dudas
+	err := r.db.Where("privacidad = ?", privacidad).
+		Preload("Estudiante").Preload("Estudiante.Persona").
+		Preload("Estudiante.Institucion").Preload("Estudiante.Ciudad").
+		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
+		Find(&dudas).Error
+	return dudas, err
+}
