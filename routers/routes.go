@@ -157,7 +157,6 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	detalles.Get("/:id", handlers.VisitaDetalleHandler.GetVisitaDetalle)
 	detalles.Put("/:id", handlers.VisitaDetalleHandler.UpdateVisitaDetalle)
 	detalles.Delete("/:id", handlers.VisitaDetalleHandler.DeleteVisitaDetalle)
-	detalles.Get("/estudiante/:estudiante_id", handlers.VisitaDetalleHandler.GetVisitaDetallesByEstudiante)
 	detalles.Get("/actividad/:actividad_id", handlers.VisitaDetalleHandler.GetVisitaDetallesByActividad)
 	detalles.Get("/programa/:programa_id", handlers.VisitaDetalleHandler.GetVisitaDetallesByPrograma)
 	detalles.Get("/participantes", handlers.VisitaDetalleHandler.GetVisitaDetallesByParticipantes) // ?min=10&max=50

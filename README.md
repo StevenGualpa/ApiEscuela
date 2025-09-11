@@ -123,19 +123,30 @@ Base URL: `http://localhost:3000`
 - `GET /actividades/nombre/:nombre` - Buscar por nombre
 - `GET /actividades/duracion?min=30&max=120` - **Filtrar por duración**
 
-### 📋 Visita Detalles y Estadísticas
+### 📋 Visita Detalles y Estadísticas (🆕 Estructura Actualizada)
 - `POST /visita-detalles` - Crear detalle
 - `GET /visita-detalles` - Obtener todos los detalles
 - `GET /visita-detalles/:id` - Obtener detalle por ID
 - `PUT /visita-detalles/:id` - Actualizar detalle
 - `DELETE /visita-detalles/:id` - Eliminar detalle
-- `GET /visita-detalles/estudiante/:estudiante_id` - Filtrar por estudiante
 - `GET /visita-detalles/actividad/:actividad_id` - Filtrar por actividad
 - `GET /visita-detalles/programa/:programa_id` - Filtrar por programa
 - `GET /visita-detalles/participantes?min=10&max=50` - **Filtrar por participantes**
 - `GET /visita-detalles/estadisticas` - **📊 Estadísticas de participación**
 
-### ❓ Sistema de Dudas
+### 🆕 Estudiantes Universitarios en Programas de Visita
+- `POST /visita-detalle-estudiantes-universitarios` - **Asignar estudiante a programa**
+- `GET /visita-detalle-estudiantes-universitarios` - Obtener todas las asignaciones
+- `GET /visita-detalle-estudiantes-universitarios/:id` - Obtener asignación por ID
+- `PUT /visita-detalle-estudiantes-universitarios/:id` - Actualizar asignación
+- `DELETE /visita-detalle-estudiantes-universitarios/:id` - Eliminar asignación
+- `GET /visita-detalle-estudiantes-universitarios/programa-visita/:programa_visita_id` - **Estudiantes por programa**
+- `GET /visita-detalle-estudiantes-universitarios/estudiante/:estudiante_id` - **Programas por estudiante**
+- `DELETE /visita-detalle-estudiantes-universitarios/programa-visita/:programa_visita_id/all` - **Eliminar todos los estudiantes de un programa**
+- `DELETE /visita-detalle-estudiantes-universitarios/estudiante/:estudiante_id/all` - **Eliminar todos los programas de un estudiante**
+- `GET /visita-detalle-estudiantes-universitarios/estadisticas` - **📊 Estadísticas de participación estudiantil**
+
+### ❓ Sistema de Dudas con Privacidad
 - `POST /dudas` - Crear duda
 - `GET /dudas` - Obtener todas las dudas
 - `GET /dudas/:id` - Obtener duda por ID
@@ -146,6 +157,9 @@ Base URL: `http://localhost:3000`
 - `GET /dudas/sin-responder` - **📋 Dudas pendientes**
 - `GET /dudas/respondidas` - **✅ Dudas respondidas**
 - `GET /dudas/sin-asignar` - **⚠️ Dudas sin asignar**
+- `GET /dudas/publicas` - **🌐 Dudas públicas** (NUEVO)
+- `GET /dudas/privadas` - **🔒 Dudas privadas** (NUEVO)
+- `GET /dudas/privacidad/:privacidad` - **🎯 Filtrar por privacidad (publico/privado)** (NUEVO)
 - `GET /dudas/buscar/:termino` - **🔍 Búsqueda en preguntas**
 - `PUT /dudas/:duda_id/asignar` - **👤 Asignar autoridad**
 - `PUT /dudas/:duda_id/responder` - **💬 Responder duda**
@@ -283,11 +297,12 @@ Base URL: `http://localhost:3000`
 }
 ```
 
-### Duda
+### 🆕 Duda con Privacidad
 ```json
 {
   "pregunta": "¿Cuáles son los requisitos de ingreso?",
-  "estudiante_id": 1
+  "estudiante_id": 1,
+  "privacidad": "publico"
 }
 ```
 
@@ -296,6 +311,7 @@ Base URL: `http://localhost:3000`
 - `respuesta`: Campo opcional, se llena cuando se responde la duda
 - `fecha_respuesta`: Se establece automáticamente al responder la duda
 - `autoridad_uteq_id`: Campo opcional, se asigna cuando una autoridad toma la duda
+- `privacidad`: Campo opcional, por defecto es "publico" (valores: "publico" o "privado")
 
 **Ejemplo de Duda Completa** (después de ser asignada y respondida):
 ```json
@@ -306,7 +322,79 @@ Base URL: `http://localhost:3000`
   "respuesta": "Los requisitos incluyen bachillerato completo...",
   "fecha_respuesta": "2024-03-15T14:45:00Z",
   "estudiante_id": 1,
-  "autoridad_uteq_id": 2
+  "autoridad_uteq_id": 2,
+  "privacidad": "publico"
+}
+```
+
+### 🆕 VisitaDetalle (Estructura Actualizada)
+```json
+{
+  "actividad_id": 1,
+  "programa_visita_id": 1,
+  "participantes": 25
+}
+```
+
+**Ejemplo de Respuesta Completa**:
+```json
+{
+  "id": 1,
+  "actividad_id": 1,
+  "programa_visita_id": 1,
+  "participantes": 25,
+  "created_at": "2024-03-15T10:00:00Z",
+  "updated_at": "2024-03-15T10:00:00Z",
+  "actividad": {
+    "id": 1,
+    "actividad": "Visita a Laboratorio de Suelos",
+    "tematica_id": 1,
+    "duracion": 90
+  },
+  "programa_visita": {
+    "id": 1,
+    "fecha": "2024-03-15T09:00:00Z",
+    "institucion_id": 1
+  }
+}
+```
+
+### 🆕 VisitaDetalleEstudiantesUniversitarios (Nueva Tabla de Relación)
+```json
+{
+  "estudiante_universitario_id": 1,
+  "programa_visita_id": 1
+}
+```
+
+**Ejemplo de Respuesta Completa**:
+```json
+{
+  "id": 1,
+  "estudiante_universitario_id": 1,
+  "programa_visita_id": 1,
+  "created_at": "2024-03-15T10:00:00Z",
+  "updated_at": "2024-03-15T10:00:00Z",
+  "estudiante_universitario": {
+    "id": 1,
+    "persona_id": 2,
+    "semestre": 5,
+    "persona": {
+      "id": 2,
+      "nombre": "Ana María López",
+      "cedula": "0987654321",
+      "correo": "ana.lopez@uteq.edu.ec"
+    }
+  },
+  "programa_visita": {
+    "id": 1,
+    "fecha": "2024-03-15T09:00:00Z",
+    "institucion_id": 1,
+    "institucion": {
+      "id": 1,
+      "nombre": "Unidad Educativa San José"
+    }
+  }
 }
 ```
 
@@ -729,13 +817,43 @@ curl -X POST http://localhost:3000/actividades \
   }'
 ```
 
-### Crear una Duda
+### 🆕 Crear una Duda con Privacidad
 ```bash
+# Crear duda pública (por defecto)
 curl -X POST http://localhost:3000/dudas \
   -d '{
     "pregunta": "¿Cuáles son los requisitos de ingreso?",
     "estudiante_id": 1
   }'
+
+# Crear duda privada
+curl -X POST http://localhost:3000/dudas \
+  -d '{
+    "pregunta": "¿Hay becas disponibles para estudiantes de bajos recursos?",
+    "estudiante_id": 1,
+    "privacidad": "privado"
+  }'
+
+# Crear duda pública explícitamente
+curl -X POST http://localhost:3000/dudas \
+  -d '{
+    "pregunta": "¿Cuándo son las inscripciones?",
+    "estudiante_id": 1,
+    "privacidad": "publico"
+  }'
+```
+
+### 🆕 Filtrar Dudas por Privacidad
+```bash
+# Obtener solo dudas públicas
+curl http://localhost:3000/dudas/publicas
+
+# Obtener solo dudas privadas
+curl http://localhost:3000/dudas/privadas
+
+# Filtrar por privacidad específica
+curl http://localhost:3000/dudas/privacidad/publico
+curl http://localhost:3000/dudas/privacidad/privado
 ```
 
 ### Responder una Duda
@@ -744,6 +862,57 @@ curl -X PUT http://localhost:3000/dudas/1/responder \
   -d '{
     "respuesta": "Los requisitos incluyen bachillerato completo y aprobar el examen de admisión."
   }'
+```
+
+### 🆕 Crear VisitaDetalle (Estructura Actualizada)
+```bash
+# Crear detalle de visita (sin estudiantes universitarios)
+curl -X POST http://localhost:3000/visita-detalles \
+  -d '{
+    "actividad_id": 1,
+    "programa_visita_id": 1,
+    "participantes": 25
+  }'
+```
+
+### 🆕 Asignar Estudiante Universitario a Programa de Visita
+```bash
+# Asignar estudiante universitario a programa de visita
+curl -X POST http://localhost:3000/visita-detalle-estudiantes-universitarios \
+  -d '{
+    "estudiante_universitario_id": 1,
+    "programa_visita_id": 1
+  }'
+```
+
+### 🆕 Obtener Estudiantes de un Programa de Visita
+```bash
+curl http://localhost:3000/visita-detalle-estudiantes-universitarios/programa-visita/1
+```
+
+### 🆕 Obtener Programas de Visita de un Estudiante
+```bash
+curl http://localhost:3000/visita-detalle-estudiantes-universitarios/estudiante/1
+```
+
+### 🆕 Eliminar Todos los Estudiantes de un Programa
+```bash
+curl -X DELETE http://localhost:3000/visita-detalle-estudiantes-universitarios/programa-visita/1/all
+```
+
+### 🆕 Obtener Estadísticas de Participación Estudiantil
+```bash
+curl http://localhost:3000/visita-detalle-estudiantes-universitarios/estadisticas
+```
+
+**Ejemplo de Respuesta de Estadísticas**:
+```json
+{
+  "total_participaciones": 45,
+  "total_estudiantes_unicos": 15,
+  "total_programas_con_estudiantes": 8,
+  "promedio_estudiantes_por_programa": 5.625
+}
 ```
 
 ### Obtener Estadísticas de Participación

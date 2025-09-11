@@ -21,9 +21,7 @@ func (r *VisitaDetalleRepository) CreateVisitaDetalle(detalle *models.VisitaDeta
 // GetVisitaDetalleByID obtiene un detalle de visita por ID
 func (r *VisitaDetalleRepository) GetVisitaDetalleByID(id uint) (*models.VisitaDetalle, error) {
 	var detalle models.VisitaDetalle
-	err := r.db.Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
-		Preload("Actividad").Preload("Actividad.Tematica").
+	err := r.db.Preload("Actividad").Preload("Actividad.Tematica").
 		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
 		Preload("ProgramaVisita.AutoridadUTEQ").
 		First(&detalle, id).Error
@@ -36,9 +34,7 @@ func (r *VisitaDetalleRepository) GetVisitaDetalleByID(id uint) (*models.VisitaD
 // GetAllVisitaDetalles obtiene todos los detalles de visita
 func (r *VisitaDetalleRepository) GetAllVisitaDetalles() ([]models.VisitaDetalle, error) {
 	var detalles []models.VisitaDetalle
-	err := r.db.Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
-		Preload("Actividad").Preload("Actividad.Tematica").
+	err := r.db.Preload("Actividad").Preload("Actividad.Tematica").
 		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
 		Preload("ProgramaVisita.AutoridadUTEQ").
 		Find(&detalles).Error
@@ -55,25 +51,10 @@ func (r *VisitaDetalleRepository) DeleteVisitaDetalle(id uint) error {
 	return r.db.Delete(&models.VisitaDetalle{}, id).Error
 }
 
-// GetVisitaDetallesByEstudiante obtiene detalles por estudiante universitario
-func (r *VisitaDetalleRepository) GetVisitaDetallesByEstudiante(estudianteID uint) ([]models.VisitaDetalle, error) {
-	var detalles []models.VisitaDetalle
-	err := r.db.Where("estudiante_universitario_id = ?", estudianteID).
-		Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
-		Preload("Actividad").Preload("Actividad.Tematica").
-		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
-		Find(&detalles).Error
-	return detalles, err
-}
-
 // GetVisitaDetallesByActividad obtiene detalles por actividad
 func (r *VisitaDetalleRepository) GetVisitaDetallesByActividad(actividadID uint) ([]models.VisitaDetalle, error) {
 	var detalles []models.VisitaDetalle
 	err := r.db.Where("actividad_id = ?", actividadID).
-		Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
 		Preload("Actividad").Preload("Actividad.Tematica").
 		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
 		Preload("ProgramaVisita.AutoridadUTEQ").
@@ -85,8 +66,6 @@ func (r *VisitaDetalleRepository) GetVisitaDetallesByActividad(actividadID uint)
 func (r *VisitaDetalleRepository) GetVisitaDetallesByPrograma(programaID uint) ([]models.VisitaDetalle, error) {
 	var detalles []models.VisitaDetalle
 	err := r.db.Where("programa_visita_id = ?", programaID).
-		Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
 		Preload("Actividad").Preload("Actividad.Tematica").
 		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
 		Preload("ProgramaVisita.AutoridadUTEQ").
@@ -98,8 +77,6 @@ func (r *VisitaDetalleRepository) GetVisitaDetallesByPrograma(programaID uint) (
 func (r *VisitaDetalleRepository) GetVisitaDetallesByParticipantes(minParticipantes, maxParticipantes int) ([]models.VisitaDetalle, error) {
 	var detalles []models.VisitaDetalle
 	err := r.db.Where("participantes BETWEEN ? AND ?", minParticipantes, maxParticipantes).
-		Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
 		Preload("Actividad").Preload("Actividad.Tematica").
 		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
 		Preload("ProgramaVisita.AutoridadUTEQ").

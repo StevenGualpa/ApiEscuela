@@ -117,25 +117,6 @@ func (h *VisitaDetalleHandler) DeleteVisitaDetalle(c *fiber.Ctx) error {
 	})
 }
 
-// GetVisitaDetallesByEstudiante obtiene detalles por estudiante universitario
-func (h *VisitaDetalleHandler) GetVisitaDetallesByEstudiante(c *fiber.Ctx) error {
-	estudianteID, err := strconv.Atoi(c.Params("estudiante_id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "ID de estudiante inválido",
-		})
-	}
-	
-	detalles, err := h.visitaDetalleRepo.GetVisitaDetallesByEstudiante(uint(estudianteID))
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se pueden obtener los detalles de visita",
-		})
-	}
-
-	return c.JSON(detalles)
-}
-
 // GetVisitaDetallesByActividad obtiene detalles por actividad
 func (h *VisitaDetalleHandler) GetVisitaDetallesByActividad(c *fiber.Ctx) error {
 	actividadID, err := strconv.Atoi(c.Params("actividad_id"))
