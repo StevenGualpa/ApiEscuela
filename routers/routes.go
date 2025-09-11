@@ -2,13 +2,31 @@ package routers
 
 import (
 	"ApiEscuela/handlers"
+	"ApiEscuela/middleware"
 	"github.com/gofiber/fiber/v2"
 )
 
 // SetupAllRoutes configura todas las rutas de la aplicación
 func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
+	// ==================== RUTAS PÚBLICAS (SIN AUTENTICACIÓN) ====================
+	// Rutas de autenticación
+	auth := app.Group("/auth")
+	auth.Post("/login", handlers.AuthHandler.Login)
+	auth.Post("/register", handlers.AuthHandler.Register)
+	auth.Post("/validate-token", handlers.AuthHandler.ValidateToken)
+
+	// ==================== RUTAS PROTEGIDAS (CON AUTENTICACIÓN JWT) ====================
+	// Aplicar middleware JWT a todas las rutas protegidas
+	protected := app.Group("/api", middleware.JWTMiddleware())
+
+	// Rutas de autenticación protegidas
+	authProtected := protected.Group("/auth")
+	authProtected.Get("/profile", handlers.AuthHandler.GetProfile)
+	authProtected.Post("/change-password", handlers.AuthHandler.ChangePassword)
+	authProtected.Post("/refresh-token", handlers.AuthHandler.RefreshToken)
+
 	// ==================== ESTUDIANTES ====================
-	estudiantes := app.Group("/estudiantes")
+	estudiantes := protected.Group("/estudiantes")
 	estudiantes.Post("/", handlers.EstudianteHandler.CreateEstudiante)
 	estudiantes.Get("/", handlers.EstudianteHandler.GetAllEstudiantes)
 	estudiantes.Get("/all-including-deleted", handlers.EstudianteHandler.GetAllEstudiantesIncludingDeleted)
@@ -22,7 +40,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	estudiantes.Get("/especialidad/:especialidad", handlers.EstudianteHandler.GetEstudiantesByEspecialidad)
 
 	// ==================== PERSONAS ====================
-	personas := app.Group("/personas")
+	personas := protected.Group("/personas")
 	personas.Post("/", handlers.PersonaHandler.CreatePersona)
 	personas.Get("/", handlers.PersonaHandler.GetAllPersonas)
 	personas.Get("/:id", handlers.PersonaHandler.GetPersona)
@@ -32,7 +50,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	personas.Get("/correo/:correo", handlers.PersonaHandler.GetPersonasByCorreo)
 
 	// ==================== PROVINCIAS ====================
-	provincias := app.Group("/provincias")
+	provincias := protected.Group("/provincias")
 	provincias.Post("/", handlers.ProvinciaHandler.CreateProvincia)
 	provincias.Get("/", handlers.ProvinciaHandler.GetAllProvincias)
 	provincias.Get("/:id", handlers.ProvinciaHandler.GetProvincia)
@@ -41,7 +59,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	provincias.Get("/nombre/:nombre", handlers.ProvinciaHandler.GetProvinciaByNombre)
 
 	// ==================== CIUDADES ====================
-	ciudades := app.Group("/ciudades")
+	ciudades := protected.Group("/ciudades")
 	ciudades.Post("/", handlers.CiudadHandler.CreateCiudad)
 	ciudades.Get("/", handlers.CiudadHandler.GetAllCiudades)
 	ciudades.Get("/:id", handlers.CiudadHandler.GetCiudad)
@@ -51,7 +69,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	ciudades.Get("/nombre/:nombre", handlers.CiudadHandler.GetCiudadByNombre)
 
 	// ==================== INSTITUCIONES ====================
-	instituciones := app.Group("/instituciones")
+	instituciones := protected.Group("/instituciones")
 	instituciones.Post("/", handlers.InstitucionHandler.CreateInstitucion)
 	instituciones.Get("/", handlers.InstitucionHandler.GetAllInstituciones)
 	instituciones.Get("/:id", handlers.InstitucionHandler.GetInstitucion)
@@ -61,7 +79,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	instituciones.Get("/autoridad/:autoridad", handlers.InstitucionHandler.GetInstitucionesByAutoridad)
 
 	// ==================== TIPOS DE USUARIO ====================
-	tiposUsuario := app.Group("/tipos-usuario")
+	tiposUsuario := protected.Group("/tipos-usuario")
 	tiposUsuario.Post("/", handlers.TipoUsuarioHandler.CreateTipoUsuario)
 	tiposUsuario.Get("/", handlers.TipoUsuarioHandler.GetAllTiposUsuario)
 	tiposUsuario.Get("/:id", handlers.TipoUsuarioHandler.GetTipoUsuario)
@@ -70,7 +88,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	tiposUsuario.Get("/nombre/:nombre", handlers.TipoUsuarioHandler.GetTipoUsuarioByNombre)
 
 	// ==================== USUARIOS ====================
-	usuarios := app.Group("/usuarios")
+	usuarios := protected.Group("/usuarios")
 	usuarios.Post("/", handlers.UsuarioHandler.CreateUsuario)
 	usuarios.Get("/", handlers.UsuarioHandler.GetAllUsuarios)
 	usuarios.Get("/all-including-deleted", handlers.UsuarioHandler.GetAllUsuariosIncludingDeleted)
@@ -82,10 +100,9 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	usuarios.Get("/username/:username", handlers.UsuarioHandler.GetUsuarioByUsername)
 	usuarios.Get("/tipo/:tipo_usuario_id", handlers.UsuarioHandler.GetUsuariosByTipo)
 	usuarios.Get("/persona/:persona_id", handlers.UsuarioHandler.GetUsuariosByPersona)
-	usuarios.Post("/login", handlers.UsuarioHandler.Login)
 
 	// ==================== ESTUDIANTES UNIVERSITARIOS ====================
-	estudiantesUniv := app.Group("/estudiantes-universitarios")
+	estudiantesUniv := protected.Group("/estudiantes-universitarios")
 	estudiantesUniv.Post("/", handlers.EstudianteUnivHandler.CreateEstudianteUniversitario)
 	estudiantesUniv.Get("/", handlers.EstudianteUnivHandler.GetAllEstudiantesUniversitarios)
 	estudiantesUniv.Get("/:id", handlers.EstudianteUnivHandler.GetEstudianteUniversitario)
@@ -95,7 +112,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	estudiantesUniv.Get("/persona/:persona_id", handlers.EstudianteUnivHandler.GetEstudianteUniversitarioByPersona)
 
 	// ==================== AUTORIDADES UTEQ ====================
-	autoridades := app.Group("/autoridades-uteq")
+	autoridades := protected.Group("/autoridades-uteq")
 	autoridades.Post("/", handlers.AutoridadHandler.CreateAutoridadUTEQ)
 	autoridades.Get("/", handlers.AutoridadHandler.GetAllAutoridadesUTEQ)
 	autoridades.Get("/all-including-deleted", handlers.AutoridadHandler.GetAllAutoridadesUTEQIncludingDeleted)
@@ -108,7 +125,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	autoridades.Get("/persona/:persona_id", handlers.AutoridadHandler.GetAutoridadUTEQByPersona)
 
 	// ==================== TEMÁTICAS ====================
-	tematicas := app.Group("/tematicas")
+	tematicas := protected.Group("/tematicas")
 	tematicas.Post("/", handlers.TematicaHandler.CreateTematica)
 	tematicas.Get("/", handlers.TematicaHandler.GetAllTematicas)
 	tematicas.Get("/:id", handlers.TematicaHandler.GetTematica)
@@ -118,7 +135,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	tematicas.Get("/descripcion/:descripcion", handlers.TematicaHandler.GetTematicasByDescripcion)
 
 	// ==================== ACTIVIDADES ====================
-	actividades := app.Group("/actividades")
+	actividades := protected.Group("/actividades")
 	actividades.Post("/", handlers.ActividadHandler.CreateActividad)
 	actividades.Get("/", handlers.ActividadHandler.GetAllActividades)
 	actividades.Get("/:id", handlers.ActividadHandler.GetActividad)
@@ -129,7 +146,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	actividades.Get("/duracion", handlers.ActividadHandler.GetActividadesByDuracion) // ?min=30&max=120
 
 	// ==================== PROGRAMAS DE VISITA ====================
-	programas := app.Group("/programas-visita")
+	programas := protected.Group("/programas-visita")
 	programas.Post("/", handlers.ProgramaVisitaHandler.CreateProgramaVisita)
 	programas.Get("/", handlers.ProgramaVisitaHandler.GetAllProgramasVisita)
 	programas.Get("/:id", handlers.ProgramaVisitaHandler.GetProgramaVisita)
@@ -141,7 +158,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	programas.Get("/rango-fecha", handlers.ProgramaVisitaHandler.GetProgramasVisitaByRangoFecha) // ?inicio=2024-01-01&fin=2024-12-31
 
 	// ==================== DETALLE AUTORIDAD DETALLES VISITA ====================
-	detalleAutoridad := app.Group("/detalle-autoridad-detalles-visita")
+	detalleAutoridad := protected.Group("/detalle-autoridad-detalles-visita")
 	detalleAutoridad.Post("/", handlers.DetalleAutoridadDetallesVisitaHandler.CreateDetalleAutoridadDetallesVisita)
 	detalleAutoridad.Get("/", handlers.DetalleAutoridadDetallesVisitaHandler.GetAllDetalleAutoridadDetallesVisitas)
 	detalleAutoridad.Get("/:id", handlers.DetalleAutoridadDetallesVisitaHandler.GetDetalleAutoridadDetallesVisita)
@@ -151,7 +168,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	detalleAutoridad.Get("/autoridad/:autoridad_id", handlers.DetalleAutoridadDetallesVisitaHandler.GetDetallesByAutoridad)
 
 	// ==================== VISITA DETALLES ====================
-	detalles := app.Group("/visita-detalles")
+	detalles := protected.Group("/visita-detalles")
 	detalles.Post("/", handlers.VisitaDetalleHandler.CreateVisitaDetalle)
 	detalles.Get("/", handlers.VisitaDetalleHandler.GetAllVisitaDetalles)
 	detalles.Get("/:id", handlers.VisitaDetalleHandler.GetVisitaDetalle)
@@ -163,7 +180,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	detalles.Get("/estadisticas", handlers.VisitaDetalleHandler.GetEstadisticasParticipacion)
 
 	// ==================== DUDAS ====================
-	dudas := app.Group("/dudas")
+	dudas := protected.Group("/dudas")
 	dudas.Post("/", handlers.DudasHandler.CreateDudas)
 	dudas.Get("/", handlers.DudasHandler.GetAllDudas)
 	dudas.Get("/:id", handlers.DudasHandler.GetDudas)
@@ -180,7 +197,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	dudas.Put("/:duda_id/responder", handlers.DudasHandler.ResponderDuda)
 
 	// ==================== VISITA DETALLE ESTUDIANTES UNIVERSITARIOS ====================
-	visitaDetalleEstudiantes := app.Group("/visita-detalle-estudiantes-universitarios")
+	visitaDetalleEstudiantes := protected.Group("/visita-detalle-estudiantes-universitarios")
 	visitaDetalleEstudiantes.Post("/", handlers.VisitaDetalleEstudiantesUniversitariosHandler.CreateVisitaDetalleEstudiantesUniversitarios)
 	visitaDetalleEstudiantes.Get("/", handlers.VisitaDetalleEstudiantesUniversitariosHandler.GetAllVisitaDetalleEstudiantesUniversitarios)
 	visitaDetalleEstudiantes.Get("/:id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.GetVisitaDetalleEstudiantesUniversitarios)
@@ -211,6 +228,7 @@ type AllHandlers struct {
 	VisitaDetalleHandler                   *handlers.VisitaDetalleHandler
 	DudasHandler                           *handlers.DudasHandler
 	VisitaDetalleEstudiantesUniversitariosHandler *handlers.VisitaDetalleEstudiantesUniversitariosHandler
+	AuthHandler                            *handlers.AuthHandler
 }
 
 // NewAllHandlers crea una instancia con todos los handlers
@@ -231,6 +249,7 @@ func NewAllHandlers(
 	visitaDetalleHandler *handlers.VisitaDetalleHandler,
 	dudasHandler *handlers.DudasHandler,
 	visitaDetalleEstudiantesUniversitariosHandler *handlers.VisitaDetalleEstudiantesUniversitariosHandler,
+	authHandler *handlers.AuthHandler,
 ) *AllHandlers {
 	return &AllHandlers{
 		EstudianteHandler:                     estudianteHandler,
@@ -249,5 +268,6 @@ func NewAllHandlers(
 		VisitaDetalleHandler:                  visitaDetalleHandler,
 		DudasHandler:                          dudasHandler,
 		VisitaDetalleEstudiantesUniversitariosHandler: visitaDetalleEstudiantesUniversitariosHandler,
+		AuthHandler:                           authHandler,
 	}
 }

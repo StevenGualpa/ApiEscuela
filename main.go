@@ -5,6 +5,7 @@ import (
 	"ApiEscuela/models"
 	"ApiEscuela/repositories"
 	"ApiEscuela/routers"
+	"ApiEscuela/services"
 	"log"
 	"os"
 
@@ -143,6 +144,12 @@ func main() {
 	dudasHandler := handlers.NewDudasHandler(dudasRepo)
 	visitaDetalleEstudiantesUniversitariosHandler := handlers.NewVisitaDetalleEstudiantesUniversitariosHandler(visitaDetalleEstudiantesUniversitariosRepo)
 
+	// Inicializar servicios
+	authService := services.NewAuthService(usuarioRepo)
+
+	// Inicializar handler de autenticación
+	authHandler := handlers.NewAuthHandler(authService)
+
 	// Crear contenedor de todos los handlers
 	allHandlers := routers.NewAllHandlers(
 		estudianteHandler,
@@ -161,6 +168,7 @@ func main() {
 		visitaDetalleHandler,
 		dudasHandler,
 		visitaDetalleEstudiantesUniversitariosHandler,
+		authHandler,
 	)
 
 	// Configurar todas las rutas
