@@ -9,6 +9,5 @@ type EstudianteUniversitario struct {
 	Semestre  int    `json:"semestre"`
 	
 	// Relaciones
-	Persona       Persona         `json:"persona,omitempty" gorm:"foreignKey:PersonaID"`
-	VisitaDetalles []VisitaDetalle `json:"visita_detalles,omitempty" gorm:"foreignKey:EstudianteUniversitarioID"`
+	Persona Persona `json:"persona,omitempty" gorm:"foreignKey:PersonaID"`
 }
