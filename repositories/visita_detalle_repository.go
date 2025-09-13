@@ -21,9 +21,9 @@ func (r *VisitaDetalleRepository) CreateVisitaDetalle(detalle *models.VisitaDeta
 // GetVisitaDetalleByID obtiene un detalle de visita por ID
 func (r *VisitaDetalleRepository) GetVisitaDetalleByID(id uint) (*models.VisitaDetalle, error) {
 	var detalle models.VisitaDetalle
-	err := r.db.Preload("Actividad").Preload("Actividad.Tematica").
-		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
+	err := r.db.Preload("ProgramaVisita").
+		Preload("ProgramaVisita.Institucion").
+		Preload("Actividad").
 		First(&detalle, id).Error
 	if err != nil {
 		return nil, err
@@ -34,9 +34,9 @@ func (r *VisitaDetalleRepository) GetVisitaDetalleByID(id uint) (*models.VisitaD
 // GetAllVisitaDetalles obtiene todos los detalles de visita
 func (r *VisitaDetalleRepository) GetAllVisitaDetalles() ([]models.VisitaDetalle, error) {
 	var detalles []models.VisitaDetalle
-	err := r.db.Preload("Actividad").Preload("Actividad.Tematica").
-		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
+	err := r.db.Preload("ProgramaVisita").
+		Preload("ProgramaVisita.Institucion").
+		Preload("Actividad").
 		Find(&detalles).Error
 	return detalles, err
 }
@@ -55,9 +55,9 @@ func (r *VisitaDetalleRepository) DeleteVisitaDetalle(id uint) error {
 func (r *VisitaDetalleRepository) GetVisitaDetallesByActividad(actividadID uint) ([]models.VisitaDetalle, error) {
 	var detalles []models.VisitaDetalle
 	err := r.db.Where("actividad_id = ?", actividadID).
-		Preload("Actividad").Preload("Actividad.Tematica").
-		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
+		Preload("ProgramaVisita").
+		Preload("ProgramaVisita.Institucion").
+		Preload("Actividad").
 		Find(&detalles).Error
 	return detalles, err
 }
@@ -66,48 +66,65 @@ func (r *VisitaDetalleRepository) GetVisitaDetallesByActividad(actividadID uint)
 func (r *VisitaDetalleRepository) GetVisitaDetallesByPrograma(programaID uint) ([]models.VisitaDetalle, error) {
 	var detalles []models.VisitaDetalle
 	err := r.db.Where("programa_visita_id = ?", programaID).
-		Preload("Actividad").Preload("Actividad.Tematica").
-		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
+		Preload("ProgramaVisita").
+		Preload("ProgramaVisita.Institucion").
+		Preload("Actividad").
 		Find(&detalles).Error
 	return detalles, err
 }
 
-// GetVisitaDetallesByParticipantes obtiene detalles por rango de participantes
-func (r *VisitaDetalleRepository) GetVisitaDetallesByParticipantes(minParticipantes, maxParticipantes int) ([]models.VisitaDetalle, error) {
-	var detalles []models.VisitaDetalle
-	err := r.db.Where("participantes BETWEEN ? AND ?", minParticipantes, maxParticipantes).
-		Preload("Actividad").Preload("Actividad.Tematica").
-		Preload("ProgramaVisita").Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
-		Find(&detalles).Error
-	return detalles, err
+// DeleteVisitaDetallesByPrograma elimina todos los detalles de un programa de visita específico
+func (r *VisitaDetalleRepository) DeleteVisitaDetallesByPrograma(programaID uint) error {
+	return r.db.Where("programa_visita_id = ?", programaID).Delete(&models.VisitaDetalle{}).Error
 }
 
-// GetEstadisticasParticipacion obtiene estadísticas de participación
-func (r *VisitaDetalleRepository) GetEstadisticasParticipacion() (map[string]interface{}, error) {
+// DeleteVisitaDetallesByActividad elimina todos los detalles de una actividad específica
+func (r *VisitaDetalleRepository) DeleteVisitaDetallesByActividad(actividadID uint) error {
+	return r.db.Where("actividad_id = ?", actividadID).Delete(&models.VisitaDetalle{}).Error
+}
+
+// ExistsRelation verifica si ya existe una relación entre programa de visita y actividad
+func (r *VisitaDetalleRepository) ExistsRelation(programaVisitaID, actividadID uint) (bool, error) {
+	var count int64
+	err := r.db.Model(&models.VisitaDetalle{}).
+		Where("programa_visita_id = ? AND actividad_id = ?", programaVisitaID, actividadID).
+		Count(&count).Error
+	return count > 0, err
+}
+
+// GetEstadisticasActividades obtiene estadísticas de actividades en visitas
+func (r *VisitaDetalleRepository) GetEstadisticasActividades() (map[string]interface{}, error) {
 	var totalDetalles int64
-	var totalParticipantes int64
-	var promedioParticipantes float64
+	var totalActividadesUnicas int64
+	var totalProgramasUnicos int64
 
 	// Contar total de detalles
 	if err := r.db.Model(&models.VisitaDetalle{}).Count(&totalDetalles).Error; err != nil {
 		return nil, err
 	}
 
-	// Sumar total de participantes
-	if err := r.db.Model(&models.VisitaDetalle{}).Select("COALESCE(SUM(participantes), 0)").Scan(&totalParticipantes).Error; err != nil {
+	// Contar actividades únicas
+	if err := r.db.Model(&models.VisitaDetalle{}).
+		Distinct("actividad_id").Count(&totalActividadesUnicas).Error; err != nil {
 		return nil, err
 	}
 
-	// Calcular promedio
-	if totalDetalles > 0 {
-		promedioParticipantes = float64(totalParticipantes) / float64(totalDetalles)
+	// Contar programas únicos
+	if err := r.db.Model(&models.VisitaDetalle{}).
+		Distinct("programa_visita_id").Count(&totalProgramasUnicos).Error; err != nil {
+		return nil, err
+	}
+
+	// Calcular promedio de actividades por programa
+	var promedioActividadesPorPrograma float64
+	if totalProgramasUnicos > 0 {
+		promedioActividadesPorPrograma = float64(totalDetalles) / float64(totalProgramasUnicos)
 	}
 
 	return map[string]interface{}{
-		"total_visitas":           totalDetalles,
-		"total_participantes":     totalParticipantes,
-		"promedio_participantes":  promedioParticipantes,
+		"total_asignaciones_actividades":    totalDetalles,
+		"total_actividades_unicas":         totalActividadesUnicas,
+		"total_programas_con_actividades":  totalProgramasUnicos,
+		"promedio_actividades_por_programa": promedioActividadesPorPrograma,
 	}, nil
 }

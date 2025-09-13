@@ -153,7 +153,6 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	programas.Put("/:id", handlers.ProgramaVisitaHandler.UpdateProgramaVisita)
 	programas.Delete("/:id", handlers.ProgramaVisitaHandler.DeleteProgramaVisita)
 	programas.Get("/fecha/:fecha", handlers.ProgramaVisitaHandler.GetProgramasVisitaByFecha) // YYYY-MM-DD
-	programas.Get("/autoridad/:autoridad_id", handlers.ProgramaVisitaHandler.GetProgramasVisitaByAutoridad)
 	programas.Get("/institucion/:institucion_id", handlers.ProgramaVisitaHandler.GetProgramasVisitaByInstitucion)
 	programas.Get("/rango-fecha", handlers.ProgramaVisitaHandler.GetProgramasVisitaByRangoFecha) // ?inicio=2024-01-01&fin=2024-12-31
 
@@ -166,6 +165,9 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	detalleAutoridad.Delete("/:id", handlers.DetalleAutoridadDetallesVisitaHandler.DeleteDetalleAutoridadDetallesVisita)
 	detalleAutoridad.Get("/programa-visita/:programa_visita_id", handlers.DetalleAutoridadDetallesVisitaHandler.GetDetallesByProgramaVisita)
 	detalleAutoridad.Get("/autoridad/:autoridad_id", handlers.DetalleAutoridadDetallesVisitaHandler.GetDetallesByAutoridad)
+	detalleAutoridad.Delete("/programa-visita/:programa_visita_id", handlers.DetalleAutoridadDetallesVisitaHandler.DeleteDetallesByProgramaVisita)
+	detalleAutoridad.Delete("/autoridad/:autoridad_id", handlers.DetalleAutoridadDetallesVisitaHandler.DeleteDetallesByAutoridad)
+	detalleAutoridad.Get("/estadisticas", handlers.DetalleAutoridadDetallesVisitaHandler.GetEstadisticasAsignacion)
 
 	// ==================== VISITA DETALLES ====================
 	detalles := protected.Group("/visita-detalles")
@@ -176,8 +178,9 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	detalles.Delete("/:id", handlers.VisitaDetalleHandler.DeleteVisitaDetalle)
 	detalles.Get("/actividad/:actividad_id", handlers.VisitaDetalleHandler.GetVisitaDetallesByActividad)
 	detalles.Get("/programa/:programa_id", handlers.VisitaDetalleHandler.GetVisitaDetallesByPrograma)
-	detalles.Get("/participantes", handlers.VisitaDetalleHandler.GetVisitaDetallesByParticipantes) // ?min=10&max=50
-	detalles.Get("/estadisticas", handlers.VisitaDetalleHandler.GetEstadisticasParticipacion)
+	detalles.Delete("/programa/:programa_id", handlers.VisitaDetalleHandler.DeleteVisitaDetallesByPrograma)
+	detalles.Delete("/actividad/:actividad_id", handlers.VisitaDetalleHandler.DeleteVisitaDetallesByActividad)
+	detalles.Get("/estadisticas", handlers.VisitaDetalleHandler.GetEstadisticasActividades)
 
 	// ==================== DUDAS ====================
 	dudas := protected.Group("/dudas")

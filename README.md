@@ -6,7 +6,8 @@ Un backend completo desarrollado en Go para la gestión integral de visitas educ
 
 - **🔐 Autenticación JWT**: Sistema completo de seguridad con tokens
 - **📊 15 Entidades**: Gestión completa de todos los aspectos del sistema
-- **🌐 80+ Endpoints**: API REST completa y documentada
+- **🔗 3 Tablas Transaccionales**: Relaciones muchos-a-muchos optimizadas
+- **🌐 90+ Endpoints**: API REST completa y documentada
 - **🛡️ Middleware de Seguridad**: Protección automática de rutas
 - **🗑️ Soft Delete**: Eliminación segura con restauración
 - **📈 Estadísticas**: Reportes y análisis integrados
@@ -16,11 +17,12 @@ Un backend completo desarrollado en Go para la gestión integral de visitas educ
 
 1. [🔐 Sistema de Autenticación](#-sistema-de-autenticación)
 2. [🏗️ Arquitectura](#️-arquitectura)
-3. [🚀 API Endpoints](#-api-endpoints)
-4. [🚨 Sistema de Errores](#-sistema-de-errores)
-5. [📝 Ejemplos de Uso](#-ejemplos-de-uso)
-6. [⚙️ Instalación](#️-instalación)
-7. [🛠️ Tecnologías](#️-tecnologías)
+3. [🔗 Tablas Transaccionales](#-tablas-transaccionales)
+4. [🚀 API Endpoints](#-api-endpoints)
+5. [🚨 Sistema de Errores](#-sistema-de-errores)
+6. [📝 Ejemplos de Uso](#-ejemplos-de-uso)
+7. [⚙️ Instalación](#️-instalación)
+8. [🛠️ Tecnologías](#️-tecnologías)
 
 ## 🔐 Sistema de Autenticación
 
@@ -65,6 +67,7 @@ curl -X GET http://localhost:3000/api/estudiantes \
 
 ### 📊 Entidades del Sistema (15 modelos)
 
+#### **🏛️ Entidades Principales**
 | Entidad | Descripción |
 |---------|-------------|
 | **Persona** | Información básica de personas |
@@ -77,11 +80,16 @@ curl -X GET http://localhost:3000/api/estudiantes \
 | **ProgramaVisita** | Programas de visitas programadas |
 | **Actividad** | Actividades disponibles |
 | **Tematica** | Temáticas de actividades |
-| **VisitaDetalle** | Detalles de participación |
 | **Dudas** | Sistema de preguntas y respuestas |
 | **Ciudad** | Ciudades del país |
 | **Provincia** | Provincias del país |
-| **DetalleAutoridadDetallesVisita** | Relación programas-autoridades |
+
+#### **🔗 Tablas Transaccionales (Relaciones Muchos-a-Muchos)**
+| Tabla Transaccional | Relaciona | Descripción |
+|---------------------|-----------|-------------|
+| **VisitaDetalleEstudiantesUniversitarios** | Programas ↔ Estudiantes | Estudiantes asignados a programas de visita |
+| **DetalleAutoridadDetallesVisita** | Programas ↔ Autoridades | Autoridades UTEQ asignadas a programas |
+| **VisitaDetalle** | Programas ��� Actividades | Actividades programadas en cada visita |
 
 ### 🏛️ Patrón de Capas
 
@@ -94,6 +102,88 @@ ApiEscuela/
 ├── middleware/      # Autenticación JWT
 ├── routers/         # Configuración de rutas
 └── main.go         # Punto de entrada
+```
+
+## 🔗 Tablas Transaccionales
+
+### 📋 Características Comunes
+
+Todas las tablas transaccionales comparten:
+- ✅ **10 endpoints** idénticos cada una
+- ✅ **Validación de duplicados** (no permite relaciones repetidas)
+- ✅ **Eliminaciones masivas** (por programa o entidad relacionada)
+- ✅ **Estadísticas automáticas** de asignación
+- ✅ **CRUD completo** con relaciones cargadas automáticamente
+
+### 🎓 **VisitaDetalleEstudiantesUniversitarios**
+
+**Relaciona**: Programas de Visita ↔ Estudiantes Universitarios
+
+**Campos**: `ID`, `programa_visita_id`, `estudiante_universitario_id`
+
+**Endpoints**:
+```bash
+POST   /api/visita-detalle-estudiantes-universitarios           # Asignar estudiante
+GET    /api/visita-detalle-estudiantes-universitarios           # Obtener todas
+GET    /api/visita-detalle-estudiantes-universitarios/:id       # Obtener por ID
+PUT    /api/visita-detalle-estudiantes-universitarios/:id       # Actualizar
+DELETE /api/visita-detalle-estudiantes-universitarios/:id       # Eliminar
+GET    /api/visita-detalle-estudiantes-universitarios/programa-visita/:programa_visita_id # Estudiantes por programa
+GET    /api/visita-detalle-estudiantes-universitarios/estudiante/:estudiante_id # Programas por estudiante
+DELETE /api/visita-detalle-estudiantes-universitarios/programa-visita/:programa_visita_id # Eliminar todos los estudiantes de un programa
+DELETE /api/visita-detalle-estudiantes-universitarios/estudiante/:estudiante_id # Eliminar todos los programas de un estudiante
+GET    /api/visita-detalle-estudiantes-universitarios/estadisticas # Estadísticas de participación
+```
+
+### 👨‍🏫 **DetalleAutoridadDetallesVisita**
+
+**Relaciona**: Programas de Visita ↔ Autoridades UTEQ
+
+**Campos**: `ID`, `programa_visita_id`, `autoridad_uteq_id`
+
+**Endpoints**:
+```bash
+POST   /api/detalle-autoridad-detalles-visita                   # Asignar autoridad
+GET    /api/detalle-autoridad-detalles-visita                   # Obtener todas
+GET    /api/detalle-autoridad-detalles-visita/:id               # Obtener por ID
+PUT    /api/detalle-autoridad-detalles-visita/:id               # Actualizar
+DELETE /api/detalle-autoridad-detalles-visita/:id               # Eliminar
+GET    /api/detalle-autoridad-detalles-visita/programa-visita/:programa_visita_id # Autoridades por programa
+GET    /api/detalle-autoridad-detalles-visita/autoridad/:autoridad_id # Programas por autoridad
+DELETE /api/detalle-autoridad-detalles-visita/programa-visita/:programa_visita_id # Eliminar todas las autoridades de un programa
+DELETE /api/detalle-autoridad-detalles-visita/autoridad/:autoridad_id # Eliminar todos los programas de una autoridad
+GET    /api/detalle-autoridad-detalles-visita/estadisticas      # Estadísticas de asignación
+```
+
+### 🎯 **VisitaDetalle**
+
+**Relaciona**: Programas de Visita ↔ Actividades
+
+**Campos**: `ID`, `programa_visita_id`, `actividad_id`
+
+**Endpoints**:
+```bash
+POST   /api/visita-detalles                                     # Asignar actividad
+GET    /api/visita-detalles                                     # Obtener todas
+GET    /api/visita-detalles/:id                                 # Obtener por ID
+PUT    /api/visita-detalles/:id                                 # Actualizar
+DELETE /api/visita-detalles/:id                                 # Eliminar
+GET    /api/visita-detalles/programa/:programa_id               # Actividades por programa
+GET    /api/visita-detalles/actividad/:actividad_id             # Programas por actividad
+DELETE /api/visita-detalles/programa/:programa_id               # Eliminar todas las actividades de un programa
+DELETE /api/visita-detalles/actividad/:actividad_id             # Eliminar todos los programas de una actividad
+GET    /api/visita-detalles/estadisticas                        # Estadísticas de actividades
+```
+
+### 📊 **Ejemplo de Estadísticas**
+
+```json
+{
+  "total_participaciones": 15,
+  "total_estudiantes_unicos": 8,
+  "total_programas_con_estudiantes": 5,
+  "promedio_estudiantes_por_programa": 3.0
+}
 ```
 
 ## 🚀 API Endpoints
@@ -147,6 +237,7 @@ GET    /api/estudiantes-universitarios/:id        # Obtener por ID
 PUT    /api/estudiantes-universitarios/:id        # Actualizar
 DELETE /api/estudiantes-universitarios/:id        # Eliminar
 GET    /api/estudiantes-universitarios/semestre/:semestre # Filtrar por semestre
+GET    /api/estudiantes-universitarios/persona/:persona_id # Filtrar por persona
 ```
 
 #### 👨‍🏫 **Autoridades UTEQ**
@@ -185,6 +276,7 @@ GET    /api/tipos-usuario                         # Obtener todos los tipos
 GET    /api/tipos-usuario/:id                     # Obtener tipo por ID
 PUT    /api/tipos-usuario/:id                     # Actualizar tipo
 DELETE /api/tipos-usuario/:id                     # Eliminar tipo
+GET    /api/tipos-usuario/nombre/:nombre          # Buscar por nombre
 ```
 
 #### 🏫 **Instituciones**
@@ -195,6 +287,7 @@ GET    /api/instituciones/:id                     # Obtener institución por ID
 PUT    /api/instituciones/:id                     # Actualizar institución
 DELETE /api/instituciones/:id                     # Eliminar institución
 GET    /api/instituciones/nombre/:nombre          # Buscar por nombre
+GET    /api/instituciones/autoridad/:autoridad    # Buscar por autoridad
 ```
 
 #### 📅 **Programas de Visita**
@@ -205,20 +298,8 @@ GET    /api/programas-visita/:id                  # Obtener programa por ID
 PUT    /api/programas-visita/:id                  # Actualizar programa
 DELETE /api/programas-visita/:id                  # Eliminar programa
 GET    /api/programas-visita/fecha/:fecha         # Filtrar por fecha (YYYY-MM-DD)
-GET    /api/programas-visita/autoridad/:autoridad_id # Filtrar por autoridad
 GET    /api/programas-visita/institucion/:institucion_id # Filtrar por institución
 GET    /api/programas-visita/rango-fecha?inicio=YYYY-MM-DD&fin=YYYY-MM-DD # Rango de fechas
-```
-
-#### 🔗 **Detalle Autoridad Detalles Visita** (Relación Muchos-a-Muchos)
-```
-POST   /api/detalle-autoridad-detalles-visita     # Asignar autoridad a programa
-GET    /api/detalle-autoridad-detalles-visita     # Obtener todas las asignaciones
-GET    /api/detalle-autoridad-detalles-visita/:id # Obtener asignación por ID
-PUT    /api/detalle-autoridad-detalles-visita/:id # Actualizar asignación
-DELETE /api/detalle-autoridad-detalles-visita/:id # Eliminar asignación
-GET    /api/detalle-autoridad-detalles-visita/programa-visita/:programa_visita_id # Autoridades por programa
-GET    /api/detalle-autoridad-detalles-visita/autoridad/:autoridad_id # Programas por autoridad
 ```
 
 #### 🎯 **Actividades**
@@ -241,33 +322,7 @@ GET    /api/tematicas/:id                         # Obtener temática por ID
 PUT    /api/tematicas/:id                         # Actualizar temática
 DELETE /api/tematicas/:id                         # Eliminar temática
 GET    /api/tematicas/nombre/:nombre              # Buscar por nombre
-```
-
-#### 📋 **Visita Detalles**
-```
-POST   /api/visita-detalles                       # Crear detalle
-GET    /api/visita-detalles                       # Obtener todos los detalles
-GET    /api/visita-detalles/:id                   # Obtener detalle por ID
-PUT    /api/visita-detalles/:id                   # Actualizar detalle
-DELETE /api/visita-detalles/:id                   # Eliminar detalle
-GET    /api/visita-detalles/actividad/:actividad_id # Filtrar por actividad
-GET    /api/visita-detalles/programa/:programa_id # Filtrar por programa
-GET    /api/visita-detalles/participantes?min=10&max=50 # Filtrar por participantes
-GET    /api/visita-detalles/estadisticas          # Estadísticas de participación
-```
-
-#### 🎓 **Visita Detalle Estudiantes Universitarios**
-```
-POST   /api/visita-detalle-estudiantes-universitarios # Asignar estudiante a programa
-GET    /api/visita-detalle-estudiantes-universitarios # Obtener todas las asignaciones
-GET    /api/visita-detalle-estudiantes-universitarios/:id # Obtener asignación por ID
-PUT    /api/visita-detalle-estudiantes-universitarios/:id # Actualizar asignación
-DELETE /api/visita-detalle-estudiantes-universitarios/:id # Eliminar asignación
-GET    /api/visita-detalle-estudiantes-universitarios/programa-visita/:programa_visita_id # Estudiantes por programa
-GET    /api/visita-detalle-estudiantes-universitarios/estudiante/:estudiante_id # Programas por estudiante
-DELETE /api/visita-detalle-estudiantes-universitarios/programa-visita/:programa_visita_id # Eliminar todos los estudiantes de un programa
-DELETE /api/visita-detalle-estudiantes-universitarios/estudiante/:estudiante_id # Eliminar todos los programas de un estudiante
-GET    /api/visita-detalle-estudiantes-universitarios/estadisticas # Estadísticas de participación estudiantil
+GET    /api/tematicas/descripcion/:descripcion    # Buscar por descripción
 ```
 
 #### ❓ **Dudas**
@@ -295,6 +350,7 @@ GET    /api/provincias                            # Obtener todas las provincias
 GET    /api/provincias/:id                        # Obtener provincia por ID
 PUT    /api/provincias/:id                        # Actualizar provincia
 DELETE /api/provincias/:id                        # Eliminar provincia
+GET    /api/provincias/nombre/:nombre             # Buscar por nombre
 ```
 
 #### 🏙️ **Ciudades**
@@ -305,11 +361,12 @@ GET    /api/ciudades/:id                          # Obtener ciudad por ID
 PUT    /api/ciudades/:id                          # Actualizar ciudad
 DELETE /api/ciudades/:id                          # Eliminar ciudad
 GET    /api/ciudades/provincia/:provincia_id      # Ciudades por provincia
+GET    /api/ciudades/nombre/:nombre               # Buscar por nombre
 ```
 
 ### 🔗 Resumen de Operaciones
 
-**Total de Endpoints**: 80+
+**Total de Endpoints**: 90+
 
 **Operaciones CRUD Estándar** (todas las entidades):
 - `POST /api/{entidad}` - Crear
@@ -348,10 +405,11 @@ GET /api/actividades/duracion?min=30&max=120
 GET /api/dudas/privacidad/publico
 ```
 
-#### **Estadísticas**
+#### **Estadísticas de Tablas Transaccionales**
 ```bash
 GET /api/visita-detalles/estadisticas
 GET /api/visita-detalle-estudiantes-universitarios/estadisticas
+GET /api/detalle-autoridad-detalles-visita/estadisticas
 ```
 
 ## 🚨 Sistema de Errores
@@ -390,10 +448,12 @@ curl -X GET http://localhost:3000/api/estudiantes
 curl -X GET http://localhost:3000/api/estudiantes \
   -H "Authorization: Bearer token_invalido"
 
-# Campos faltantes en login
-curl -X POST http://localhost:3000/auth/login \
+# Relación duplicada en tabla transaccional
+curl -X POST http://localhost:3000/api/visita-detalles \
+  -H "Authorization: Bearer TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"usuario": ""}'
+  -d '{"programa_visita_id": 1, "actividad_id": 1}'
+# Respuesta: 409 Conflict - "La relación ya existe"
 ```
 
 ## 📝 Ejemplos de Uso
@@ -415,6 +475,42 @@ curl -X GET http://localhost:3000/api/estudiantes \
 # 3. Renovar token
 curl -X POST http://localhost:3000/api/auth/refresh-token \
   -H "Authorization: Bearer TOKEN"
+```
+
+### 🔗 Gestión de Tablas Transaccionales
+
+```bash
+# 1. Crear programa de visita
+curl -X POST http://localhost:3000/api/programas-visita \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"fecha": "2024-04-15T09:00:00Z", "institucion_id": 1}'
+
+# 2. Asignar estudiantes al programa
+curl -X POST http://localhost:3000/api/visita-detalle-estudiantes-universitarios \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"programa_visita_id": 1, "estudiante_universitario_id": 1}'
+
+# 3. Asignar autoridades al programa
+curl -X POST http://localhost:3000/api/detalle-autoridad-detalles-visita \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"programa_visita_id": 1, "autoridad_uteq_id": 1}'
+
+# 4. Asignar actividades al programa
+curl -X POST http://localhost:3000/api/visita-detalles \
+  -H "Authorization: Bearer TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"programa_visita_id": 1, "actividad_id": 1}'
+
+# 5. Ver estudiantes del programa
+curl -H "Authorization: Bearer TOKEN" \
+  http://localhost:3000/api/visita-detalle-estudiantes-universitarios/programa-visita/1
+
+# 6. Ver estadísticas
+curl -H "Authorization: Bearer TOKEN" \
+  http://localhost:3000/api/visita-detalle-estudiantes-universitarios/estadisticas
 ```
 
 ### 📚 Gestión de Datos
@@ -471,18 +567,6 @@ curl -H "Authorization: Bearer TOKEN" \
   "http://localhost:3000/api/programas-visita/rango-fecha?inicio=2024-01-01&fin=2024-12-31"
 ```
 
-### 📊 Estadísticas
-
-```bash
-# Estadísticas de visitas
-curl -H "Authorization: Bearer TOKEN" \
-  http://localhost:3000/api/visita-detalles/estadisticas
-
-# Estadísticas de participación estudiantil
-curl -H "Authorization: Bearer TOKEN" \
-  http://localhost:3000/api/visita-detalle-estudiantes-universitarios/estadisticas
-```
-
 ## ⚙️ Instalación
 
 ### Prerrequisitos
@@ -536,6 +620,21 @@ La aplicación estará disponible en `http://localhost:3000`
 - **Middleware automático**: Validación en rutas `/api/*`
 - **Context injection**: Info del usuario disponible en handlers
 
+## 📚 Guías de Pruebas
+
+### 🧪 Documentación de Pruebas Disponible
+
+- **`PRUEBAS_PROGRAMA_BASICO.md`**: Guía para probar ProgramaVisita
+- **`PRUEBAS_VISITA_ESTUDIANTE.md`**: Guía para VisitaDetalleEstudiantesUniversitarios
+- **`PRUEBAS_DETALLE_AUTORIDAD.md`**: Guía para DetalleAutoridadDetallesVisita
+- **`PRUEBAS_VISITA_DETALLE.md`**: Guía para VisitaDetalle
+
+Cada guía incluye:
+- ✅ Ejemplos paso a paso
+- ✅ Casos de prueba específicos
+- ✅ Manejo de errores
+- ✅ Validaciones y formatos
+
 ## ⚠️ Migración desde Versión Anterior
 
 ### Cambios Importantes
@@ -543,6 +642,7 @@ La aplicación estará disponible en `http://localhost:3000`
 1. **URLs actualizadas**: Agregar `/api/` antes de todas las rutas protegidas
 2. **Header requerido**: `Authorization: Bearer TOKEN` en todas las peticiones
 3. **Flujo obligatorio**: Login → Token → Peticiones autenticadas
+4. **Nuevas tablas transaccionales**: 3 nuevas entidades con 30 endpoints adicionales
 
 ### Ejemplo de Migración
 
@@ -561,16 +661,11 @@ fetch('/api/estudiantes', {
 
 ✅ **Sistema Completo y Funcional**
 - 15 entidades implementadas
-- 80+ endpoints API
+- 3 tablas transaccionales optimizadas
+- 90+ endpoints API
 - Sistema de autenticación JWT completo
 - Sistema de errores estructurado
-- Documentación completa
-
-## 📚 Documentación Adicional
-
-- **`AUTH_README.md`**: Documentación detallada de autenticación
-- **Ejemplos completos**: JavaScript/Fetch, cURL, Postman
-- **Guías de migración**: Actualización de código existente
+- Documentación completa con guías de pruebas
 
 ## 📞 Soporte
 
@@ -581,9 +676,10 @@ Para soporte técnico o consultas, contactar al equipo de desarrollo de la UTEQ.
 1. **Error 401**: Verificar header `Authorization: Bearer TOKEN`
 2. **Token expirado**: Usar `/api/auth/refresh-token` o hacer login
 3. **URLs incorrectas**: Asegurar prefijo `/api/` en rutas protegidas
+4. **Error 409 en tablas transaccionales**: Relación duplicada, verificar IDs
 
 ---
 
 **Desarrollado para la Universidad Técnica Estatal de Quevedo (UTEQ)**
 
-**🔐 Versión 2.0 - Sistema Completo con Autenticación JWT**
+**🔐 Versión 2.1 - Sistema Completo con Tablas Transaccionales**

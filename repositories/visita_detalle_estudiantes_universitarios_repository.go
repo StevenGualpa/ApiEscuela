@@ -22,10 +22,8 @@ func (r *VisitaDetalleEstudiantesUniversitariosRepository) CreateVisitaDetalleEs
 func (r *VisitaDetalleEstudiantesUniversitariosRepository) GetVisitaDetalleEstudiantesUniversitariosByID(id uint) (*models.VisitaDetalleEstudiantesUniversitarios, error) {
 	var relacion models.VisitaDetalleEstudiantesUniversitarios
 	err := r.db.Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
 		Preload("ProgramaVisita").
 		Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
 		First(&relacion, id).Error
 	if err != nil {
 		return nil, err
@@ -37,10 +35,8 @@ func (r *VisitaDetalleEstudiantesUniversitariosRepository) GetVisitaDetalleEstud
 func (r *VisitaDetalleEstudiantesUniversitariosRepository) GetAllVisitaDetalleEstudiantesUniversitarios() ([]models.VisitaDetalleEstudiantesUniversitarios, error) {
 	var relaciones []models.VisitaDetalleEstudiantesUniversitarios
 	err := r.db.Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
 		Preload("ProgramaVisita").
 		Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
 		Find(&relaciones).Error
 	return relaciones, err
 }
@@ -60,10 +56,8 @@ func (r *VisitaDetalleEstudiantesUniversitariosRepository) GetEstudiantesByProgr
 	var relaciones []models.VisitaDetalleEstudiantesUniversitarios
 	err := r.db.Where("programa_visita_id = ?", programaVisitaID).
 		Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
 		Preload("ProgramaVisita").
 		Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
 		Find(&relaciones).Error
 	return relaciones, err
 }
@@ -73,10 +67,8 @@ func (r *VisitaDetalleEstudiantesUniversitariosRepository) GetProgramasVisitaByE
 	var relaciones []models.VisitaDetalleEstudiantesUniversitarios
 	err := r.db.Where("estudiante_universitario_id = ?", estudianteID).
 		Preload("EstudianteUniversitario").
-		Preload("EstudianteUniversitario.Persona").
 		Preload("ProgramaVisita").
 		Preload("ProgramaVisita.Institucion").
-		Preload("ProgramaVisita.AutoridadUTEQ").
 		Find(&relaciones).Error
 	return relaciones, err
 }

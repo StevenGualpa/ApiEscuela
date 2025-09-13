@@ -12,7 +12,5 @@ type ProgramaVisita struct {
 	InstitucionID uint        `json:"institucion_id" gorm:"not null"`
 	
 	// Relaciones
-	Institucion                      Institucion                        `json:"institucion,omitempty" gorm:"foreignKey:InstitucionID"`
-	VisitaDetalles                   []VisitaDetalle                    `json:"visita_detalles,omitempty" gorm:"foreignKey:ProgramaVisitaID"`
-	DetalleAutoridadDetallesVisitas  []DetalleAutoridadDetallesVisita   `json:"detalle_autoridad_detalles_visitas,omitempty" gorm:"foreignKey:ProgramaVisitaID"`
+	Institucion   Institucion   `json:"institucion,omitempty" gorm:"foreignKey:InstitucionID"`
 }

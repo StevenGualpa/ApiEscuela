@@ -138,24 +138,6 @@ func (h *ProgramaVisitaHandler) GetProgramasVisitaByFecha(c *fiber.Ctx) error {
 	return c.JSON(programas)
 }
 
-// GetProgramasVisitaByAutoridad obtiene programas por autoridad UTEQ
-func (h *ProgramaVisitaHandler) GetProgramasVisitaByAutoridad(c *fiber.Ctx) error {
-	autoridadID, err := strconv.Atoi(c.Params("autoridad_id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "ID de autoridad inválido",
-		})
-	}
-	
-	programas, err := h.programaRepo.GetProgramasVisitaByAutoridad(uint(autoridadID))
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se pueden obtener los programas de visita",
-		})
-	}
-
-	return c.JSON(programas)
-}
 
 // GetProgramasVisitaByInstitucion obtiene programas por institución
 func (h *ProgramaVisitaHandler) GetProgramasVisitaByInstitucion(c *fiber.Ctx) error {

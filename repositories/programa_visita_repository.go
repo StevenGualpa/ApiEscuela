@@ -22,8 +22,7 @@ func (r *ProgramaVisitaRepository) CreateProgramaVisita(programa *models.Program
 // GetProgramaVisitaByID obtiene un programa de visita por ID
 func (r *ProgramaVisitaRepository) GetProgramaVisitaByID(id uint) (*models.ProgramaVisita, error) {
 	var programa models.ProgramaVisita
-	err := r.db.Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
-		Preload("Institucion").Preload("VisitaDetalles").
+	err := r.db.Preload("Institucion").
 		First(&programa, id).Error
 	if err != nil {
 		return nil, err
@@ -34,8 +33,7 @@ func (r *ProgramaVisitaRepository) GetProgramaVisitaByID(id uint) (*models.Progr
 // GetAllProgramasVisita obtiene todos los programas de visita
 func (r *ProgramaVisitaRepository) GetAllProgramasVisita() ([]models.ProgramaVisita, error) {
 	var programas []models.ProgramaVisita
-	err := r.db.Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
-		Preload("Institucion").Preload("VisitaDetalles").
+	err := r.db.Preload("Institucion").
 		Find(&programas).Error
 	return programas, err
 }
@@ -57,18 +55,7 @@ func (r *ProgramaVisitaRepository) GetProgramasVisitaByFecha(fecha time.Time) ([
 	endOfDay := startOfDay.Add(24 * time.Hour)
 	
 	err := r.db.Where("fecha >= ? AND fecha < ?", startOfDay, endOfDay).
-		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
-		Preload("Institucion").Preload("VisitaDetalles").
-		Find(&programas).Error
-	return programas, err
-}
-
-// GetProgramasVisitaByAutoridad obtiene programas por autoridad UTEQ
-func (r *ProgramaVisitaRepository) GetProgramasVisitaByAutoridad(autoridadID uint) ([]models.ProgramaVisita, error) {
-	var programas []models.ProgramaVisita
-	err := r.db.Where("autoridad_uteqid = ?", autoridadID).
-		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
-		Preload("Institucion").Preload("VisitaDetalles").
+		Preload("Institucion").
 		Find(&programas).Error
 	return programas, err
 }
@@ -77,8 +64,7 @@ func (r *ProgramaVisitaRepository) GetProgramasVisitaByAutoridad(autoridadID uin
 func (r *ProgramaVisitaRepository) GetProgramasVisitaByInstitucion(institucionID uint) ([]models.ProgramaVisita, error) {
 	var programas []models.ProgramaVisita
 	err := r.db.Where("institucion_id = ?", institucionID).
-		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
-		Preload("Institucion").Preload("VisitaDetalles").
+		Preload("Institucion").
 		Find(&programas).Error
 	return programas, err
 }
@@ -87,8 +73,7 @@ func (r *ProgramaVisitaRepository) GetProgramasVisitaByInstitucion(institucionID
 func (r *ProgramaVisitaRepository) GetProgramasVisitaByRangoFecha(fechaInicio, fechaFin time.Time) ([]models.ProgramaVisita, error) {
 	var programas []models.ProgramaVisita
 	err := r.db.Where("fecha BETWEEN ? AND ?", fechaInicio, fechaFin).
-		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
-		Preload("Institucion").Preload("VisitaDetalles").
+		Preload("Institucion").
 		Find(&programas).Error
 	return programas, err
 }
