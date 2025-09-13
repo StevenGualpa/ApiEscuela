@@ -47,10 +47,10 @@ func (r *UsuarioRepository) DeleteUsuario(id uint) error {
 	return r.db.Delete(&models.Usuario{}, id).Error
 }
 
-// GetUsuarioByUsername busca usuario por nombre de usuario
+// GetUsuarioByUsername busca usuario por nombre de usuario (solo activos)
 func (r *UsuarioRepository) GetUsuarioByUsername(username string) (*models.Usuario, error) {
 	var usuario models.Usuario
-	err := r.db.Where("usuario = ?", username).
+	err := r.db.Where("usuario = ? AND deleted_at IS NULL", username).
 		Preload("Persona").Preload("TipoUsuario").
 		First(&usuario).Error
 	if err != nil {
@@ -117,6 +117,18 @@ func (r *UsuarioRepository) GetUsuarioByIDIncludingDeleted(id uint) (*models.Usu
 	var usuario models.Usuario
 	err := r.db.Unscoped().Preload("Persona").Preload("TipoUsuario").
 		First(&usuario, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &usuario, nil
+}
+
+// GetUsuarioByUsernameIncludingDeleted busca usuario por nombre incluyendo eliminados (para debugging)
+func (r *UsuarioRepository) GetUsuarioByUsernameIncludingDeleted(username string) (*models.Usuario, error) {
+	var usuario models.Usuario
+	err := r.db.Unscoped().Where("usuario = ?", username).
+		Preload("Persona").Preload("TipoUsuario").
+		First(&usuario).Error
 	if err != nil {
 		return nil, err
 	}

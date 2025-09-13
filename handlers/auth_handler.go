@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"ApiEscuela/middleware"
 	"ApiEscuela/services"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -21,23 +23,56 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var loginReq services.LoginRequest
 	
 	if err := c.BodyParser(&loginReq); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "No se puede procesar el JSON",
+		return c.Status(fiber.StatusBadRequest).JSON(middleware.ErrorResponse{
+			Error:       "Datos inválidos",
+			ErrorCode:   "LOGIN_INVALID_JSON",
+			Message:     "No se puede procesar el JSON. Verifique que el formato sea correcto",
+			StatusCode:  400,
+			Timestamp:   time.Now().Format(time.RFC3339),
+			Path:        c.Path(),
+			Method:      c.Method(),
 		})
 	}
 
 	// Validar campos requeridos
 	if loginReq.Usuario == "" || loginReq.Contraseña == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Usuario y contraseña son requeridos",
+		return c.Status(fiber.StatusBadRequest).JSON(middleware.ErrorResponse{
+			Error:       "Campos requeridos faltantes",
+			ErrorCode:   "LOGIN_MISSING_FIELDS",
+			Message:     "Usuario y contraseña son requeridos",
+			StatusCode:  400,
+			Timestamp:   time.Now().Format(time.RFC3339),
+			Path:        c.Path(),
+			Method:      c.Method(),
 		})
 	}
 
 	// Intentar login
 	response, err := h.authService.Login(loginReq)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": err.Error(),
+		// Determinar el código de error específico basado en el mensaje
+		var errorCode string
+		switch err.Error() {
+		case "usuario no encontrado":
+			errorCode = "LOGIN_USER_NOT_FOUND"
+		case "usuario eliminado - contacte al administrador":
+			errorCode = "LOGIN_USER_DELETED"
+		case "contraseña incorrecta (texto plano)":
+			errorCode = "LOGIN_PASSWORD_INCORRECT_PLAIN"
+		case "contraseña incorrecta (hash bcrypt)":
+			errorCode = "LOGIN_PASSWORD_INCORRECT_HASH"
+		default:
+			errorCode = "LOGIN_FAILED"
+		}
+
+		return c.Status(fiber.StatusUnauthorized).JSON(middleware.ErrorResponse{
+			Error:       "Credenciales inválidas",
+			ErrorCode:   errorCode,
+			Message:     err.Error(),
+			StatusCode:  401,
+			Timestamp:   time.Now().Format(time.RFC3339),
+			Path:        c.Path(),
+			Method:      c.Method(),
 		})
 	}
 

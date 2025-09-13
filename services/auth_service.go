@@ -57,12 +57,27 @@ func (s *AuthService) Login(loginReq LoginRequest) (*LoginResponse, error) {
 	// Buscar usuario por nombre de usuario
 	usuario, err := s.usuarioRepo.GetUsuarioByUsername(loginReq.Usuario)
 	if err != nil {
-		return nil, errors.New("usuario o contraseña incorrectos")
+		// Intentar buscar incluyendo eliminados para debugging
+		usuarioDeleted, errDeleted := s.usuarioRepo.GetUsuarioByUsernameIncludingDeleted(loginReq.Usuario)
+		if errDeleted == nil && usuarioDeleted != nil {
+			// El usuario existe pero está eliminado
+			return nil, errors.New("usuario eliminado - contacte al administrador")
+		}
+		// Usuario no existe
+		return nil, errors.New("usuario no encontrado")
 	}
 
-	// Verificar contraseña
-	if !s.CheckPassword(loginReq.Contraseña, usuario.Contraseña) {
-		return nil, errors.New("usuario o contraseña incorrectos")
+	// Verificar si la contraseña está encriptada (hash bcrypt tiene al menos 60 caracteres)
+	if len(usuario.Contraseña) < 60 {
+		// Contraseña no está encriptada, comparar directamente
+		if loginReq.Contraseña != usuario.Contraseña {
+			return nil, errors.New("contraseña incorrecta (texto plano)")
+		}
+	} else {
+		// Verificar contraseña encriptada
+		if !s.CheckPassword(loginReq.Contraseña, usuario.Contraseña) {
+			return nil, errors.New("contraseña incorrecta (hash bcrypt)")
+		}
 	}
 
 	// Generar token JWT
