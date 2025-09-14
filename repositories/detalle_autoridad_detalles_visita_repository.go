@@ -62,7 +62,7 @@ func (r *DetalleAutoridadDetallesVisitaRepository) GetDetallesByProgramaVisitaID
 // GetDetallesByAutoridadID obtiene todos los detalles de una autoridad específica
 func (r *DetalleAutoridadDetallesVisitaRepository) GetDetallesByAutoridadID(autoridadID uint) ([]models.DetalleAutoridadDetallesVisita, error) {
 	var detalles []models.DetalleAutoridadDetallesVisita
-	err := r.db.Where("autoridad_uteqid = ?", autoridadID).
+	err := r.db.Where("autoridad_uteq_id = ?", autoridadID).
 		Preload("ProgramaVisita").Preload("AutoridadUTEQ").Find(&detalles).Error
 	return detalles, err
 }
@@ -74,14 +74,14 @@ func (r *DetalleAutoridadDetallesVisitaRepository) DeleteDetallesByProgramaVisit
 
 // DeleteDetallesByAutoridadID elimina todos los detalles de una autoridad específica
 func (r *DetalleAutoridadDetallesVisitaRepository) DeleteDetallesByAutoridadID(autoridadID uint) error {
-	return r.db.Where("autoridad_uteqid = ?", autoridadID).Delete(&models.DetalleAutoridadDetallesVisita{}).Error
+	return r.db.Where("autoridad_uteq_id = ?", autoridadID).Delete(&models.DetalleAutoridadDetallesVisita{}).Error
 }
 
 // ExistsRelation verifica si ya existe una relación entre programa de visita y autoridad
 func (r *DetalleAutoridadDetallesVisitaRepository) ExistsRelation(programaVisitaID, autoridadID uint) (bool, error) {
 	var count int64
 	err := r.db.Model(&models.DetalleAutoridadDetallesVisita{}).
-		Where("programa_visita_id = ? AND autoridad_uteqid = ?", programaVisitaID, autoridadID).
+		Where("programa_visita_id = ? AND autoridad_uteq_id = ?", programaVisitaID, autoridadID).
 		Count(&count).Error
 	return count > 0, err
 }
@@ -99,7 +99,7 @@ func (r *DetalleAutoridadDetallesVisitaRepository) GetEstadisticasAsignacion() (
 
 	// Contar autoridades únicas
 	if err := r.db.Model(&models.DetalleAutoridadDetallesVisita{}).
-		Distinct("autoridad_uteqid").Count(&totalAutoridadesUnicas).Error; err != nil {
+		Distinct("autoridad_uteq_id").Count(&totalAutoridadesUnicas).Error; err != nil {
 		return nil, err
 	}
 
