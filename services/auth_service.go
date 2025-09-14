@@ -30,6 +30,7 @@ type LoginResponse struct {
 	Token   string        `json:"token"`
 	Usuario *models.Usuario `json:"usuario"`
 	Message string        `json:"message"`
+	RequiereCambioPassword bool `json:"requiere_cambio_password"`
 }
 
 // RegisterRequest representa la estructura de datos para el registro
@@ -89,10 +90,18 @@ func (s *AuthService) Login(loginReq LoginRequest) (*LoginResponse, error) {
 	// Limpiar la contraseña antes de devolver el usuario
 	usuario.Contraseña = ""
 
+	// Verificar si el usuario necesita cambiar contraseña
+	requiereCambioPassword := !usuario.Verificado
+	message := "Login exitoso"
+	if requiereCambioPassword {
+		message = "Login exitoso - Debe cambiar su contraseña para continuar"
+	}
+
 	return &LoginResponse{
-		Token:   token,
-		Usuario: usuario,
-		Message: "Login exitoso",
+		Token:                  token,
+		Usuario:                usuario,
+		Message:                message,
+		RequiereCambioPassword: requiereCambioPassword,
 	}, nil
 }
 
@@ -148,8 +157,9 @@ func (s *AuthService) ChangePassword(userID uint, oldPassword, newPassword strin
 		return errors.New("error al encriptar nueva contraseña")
 	}
 
-	// Actualizar contraseña
+	// Actualizar contraseña y marcar como verificado
 	usuario.Contraseña = hashedPassword
+	usuario.Verificado = true
 	if err := s.usuarioRepo.UpdateUsuario(usuario); err != nil {
 		return errors.New("error al actualizar contraseña")
 	}
@@ -161,6 +171,7 @@ func (s *AuthService) ChangePassword(userID uint, oldPassword, newPassword strin
 func (s *AuthService) GenerateNewToken(userID uint, username string, tipoUsuarioID uint) (string, error) {
 	return middleware.GenerateJWT(userID, username, tipoUsuarioID)
 }
+
 
 // ValidateToken valida un token JWT y devuelve las claims
 func (s *AuthService) ValidateToken(tokenString string) (bool, *middleware.JWTClaims) {

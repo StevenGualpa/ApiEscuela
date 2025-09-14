@@ -191,6 +191,7 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	})
 }
 
+
 // ValidateToken valida si un token es válido (endpoint público para verificación)
 func (h *AuthHandler) ValidateToken(c *fiber.Ctx) error {
 	var tokenReq struct {

@@ -9,6 +9,7 @@ type Usuario struct {
 	Contraseña    string      `json:"contraseña" gorm:"not null"`
 	PersonaID     uint        `json:"persona_id" gorm:"not null"`
 	TipoUsuarioID uint        `json:"tipo_usuario_id" gorm:"not null"`
+	Verificado    bool        `json:"verificado" gorm:"default:false"`
 	
 	// Relaciones
 	Persona     Persona     `json:"persona,omitempty" gorm:"foreignKey:PersonaID"`

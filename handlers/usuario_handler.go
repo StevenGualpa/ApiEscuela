@@ -90,11 +90,33 @@ func (h *UsuarioHandler) UpdateUsuario(c *fiber.Ctx) error {
 			"error": "Usuario no encontrado",
 		})
 	}
+
+	// Estructura para recibir los datos de actualización
+	var updateData struct {
+		Usuario       string `json:"usuario"`
+		PersonaID     uint   `json:"persona_id"`
+		TipoUsuarioID uint   `json:"tipo_usuario_id"`
+		Verificado    *bool  `json:"verificado"` // Puntero para detectar si se envió el campo
+	}
 	
-	if err := c.BodyParser(usuario); err != nil {
+	if err := c.BodyParser(&updateData); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "No se puede procesar el JSON",
 		})
+	}
+
+	// Actualizar solo los campos que se enviaron
+	if updateData.Usuario != "" {
+		usuario.Usuario = updateData.Usuario
+	}
+	if updateData.PersonaID != 0 {
+		usuario.PersonaID = updateData.PersonaID
+	}
+	if updateData.TipoUsuarioID != 0 {
+		usuario.TipoUsuarioID = updateData.TipoUsuarioID
+	}
+	if updateData.Verificado != nil {
+		usuario.Verificado = *updateData.Verificado
 	}
 
 	if err := h.usuarioRepo.UpdateUsuario(usuario); err != nil {
