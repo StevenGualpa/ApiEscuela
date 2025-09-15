@@ -215,7 +215,8 @@ func (h *DudasHandler) ResponderDuda(c *fiber.Ctx) error {
 	}
 
 	var requestData struct {
-		Respuesta string `json:"respuesta"`
+		Respuesta       string `json:"respuesta"`
+		AutoridadUTEQID uint   `json:"autoridad_uteq_id"`
 	}
 
 	if err := c.BodyParser(&requestData); err != nil {
@@ -224,7 +225,7 @@ func (h *DudasHandler) ResponderDuda(c *fiber.Ctx) error {
 		})
 	}
 
-	if err := h.dudasRepo.ResponderDuda(uint(dudaID), requestData.Respuesta); err != nil {
+	if err := h.dudasRepo.ResponderDuda(uint(dudaID), requestData.Respuesta, requestData.AutoridadUTEQID); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "No se puede responder la duda",
 		})
