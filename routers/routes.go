@@ -196,7 +196,6 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	dudas.Get("/sin-asignar", handlers.DudasHandler.GetDudasSinAsignar)
 	dudas.Get("/privacidad/:privacidad", handlers.DudasHandler.GetDudasByPrivacidad)
 	dudas.Get("/buscar/:termino", handlers.DudasHandler.BuscarDudasPorPregunta)
-	dudas.Put("/:duda_id/asignar", handlers.DudasHandler.AsignarAutoridadADuda)
 	dudas.Put("/:duda_id/responder", handlers.DudasHandler.ResponderDuda)
 
 	// ==================== VISITA DETALLE ESTUDIANTES UNIVERSITARIOS ====================

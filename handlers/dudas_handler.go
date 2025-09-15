@@ -205,36 +205,6 @@ func (h *DudasHandler) BuscarDudasPorPregunta(c *fiber.Ctx) error {
 	return c.JSON(dudas)
 }
 
-// AsignarAutoridadADuda asigna una autoridad a una duda
-func (h *DudasHandler) AsignarAutoridadADuda(c *fiber.Ctx) error {
-	dudaID, err := strconv.Atoi(c.Params("duda_id"))
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "ID de duda inválido",
-		})
-	}
-
-	var requestData struct {
-		AutoridadID uint `json:"autoridad_id"`
-	}
-
-	if err := c.BodyParser(&requestData); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "No se puede procesar el JSON",
-		})
-	}
-
-	if err := h.dudasRepo.AsignarAutoridadADuda(uint(dudaID), requestData.AutoridadID); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede asignar la autoridad a la duda",
-		})
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Autoridad asignada exitosamente",
-	})
-}
-
 // ResponderDuda actualiza la respuesta de una duda
 func (h *DudasHandler) ResponderDuda(c *fiber.Ctx) error {
 	dudaID, err := strconv.Atoi(c.Params("duda_id"))

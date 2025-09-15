@@ -121,19 +121,15 @@ func (r *DudasRepository) BuscarDudasPorPregunta(termino string) ([]models.Dudas
 	return dudas, err
 }
 
-// AsignarAutoridadADuda asigna una autoridad a una duda
-func (r *DudasRepository) AsignarAutoridadADuda(dudaID, autoridadID uint) error {
-	return r.db.Model(&models.Dudas{}).Where("id = ?", dudaID).
-		Update("autoridad_uteqid", autoridadID).Error
-}
 
 // ResponderDuda actualiza la respuesta de una duda
-func (r *DudasRepository) ResponderDuda(dudaID uint, respuesta string) error {
+func (r *DudasRepository) ResponderDuda(dudaID uint, respuesta string,autoridadID uint) error {
 	now := time.Now()
 	return r.db.Model(&models.Dudas{}).Where("id = ?", dudaID).
 		Updates(map[string]interface{}{
 			"respuesta":        &respuesta,
 			"fecha_respuesta":  &now,
+			"autoridad_uteqid":  &autoridadID,
 		}).Error
 }
 
