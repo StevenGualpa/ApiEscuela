@@ -4,7 +4,6 @@ import (
 	"ApiEscuela/models"
 	"errors"
 	"strings"
-	"github.com/jackc/pgconn"
 	"gorm.io/gorm"
 )
 
@@ -17,14 +16,12 @@ var (
 )
 
 func classifyUniqueEstudianteError(err error) error {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		if pgErr.Code == "23505" { // unique_violation
-			if strings.Contains(pgErr.Detail, "(persona_id)") {
-				return ErrEstudianteDuplicado
-			}
+	msg := err.Error()
+	if strings.Contains(msg, "duplicate key value") || strings.Contains(msg, "UNIQUE constraint") {
+		if strings.Contains(msg, "persona_id") || strings.Contains(msg, "persona") {
 			return ErrEstudianteDuplicado
 		}
+		return ErrEstudianteDuplicado
 	}
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		return ErrEstudianteDuplicado

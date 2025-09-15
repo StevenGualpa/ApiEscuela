@@ -4,7 +4,6 @@ import (
 	"ApiEscuela/models"
 	"errors"
 	"strings"
-	"github.com/jackc/pgconn"
 	"gorm.io/gorm"
 )
 
@@ -19,18 +18,16 @@ var (
 )
 
 func classifyUniquePersonaError(err error) error {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		if pgErr.Code == "23505" { // unique_violation
-			det := pgErr.Detail
-			if strings.Contains(det, "(cedula)") {
-				return ErrCedulaDuplicada
-			}
-			if strings.Contains(det, "(correo)") {
-				return ErrCorreoDuplicado
-			}
-			return ErrPersonaYaExiste
+	// Intento de detección por mensaje cuando no está disponible pgconn
+	msg := err.Error()
+	if strings.Contains(msg, "duplicate key value") || strings.Contains(msg, "UNIQUE constraint") {
+		if strings.Contains(msg, "cedula") {
+			return ErrCedulaDuplicada
 		}
+		if strings.Contains(msg, "correo") {
+			return ErrCorreoDuplicado
+		}
+		return ErrPersonaYaExiste
 	}
 	if errors.Is(err, gorm.ErrDuplicatedKey) {
 		return ErrPersonaYaExiste
