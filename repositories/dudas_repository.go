@@ -70,7 +70,7 @@ func (r *DudasRepository) GetDudasByEstudiante(estudianteID uint) ([]models.Duda
 // GetDudasByAutoridad obtiene dudas asignadas a una autoridad
 func (r *DudasRepository) GetDudasByAutoridad(autoridadID uint) ([]models.Dudas, error) {
 	var dudas []models.Dudas
-	err := r.db.Where("autoridad_uteqid = ?", autoridadID).
+	err := r.db.Where("autoridad_uteq_id = ?", autoridadID).
 		Preload("Estudiante").Preload("Estudiante.Persona").
 		Preload("Estudiante.Institucion").Preload("Estudiante.Ciudad").
 		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
@@ -103,7 +103,7 @@ func (r *DudasRepository) GetDudasRespondidas() ([]models.Dudas, error) {
 // GetDudasSinAsignar obtiene dudas sin autoridad asignada
 func (r *DudasRepository) GetDudasSinAsignar() ([]models.Dudas, error) {
 	var dudas []models.Dudas
-	err := r.db.Where("autoridad_uteqid IS NULL").
+	err := r.db.Where("autoridad_uteq_id IS NULL").
 		Preload("Estudiante").Preload("Estudiante.Persona").
 		Preload("Estudiante.Institucion").Preload("Estudiante.Ciudad").
 		Find(&dudas).Error
@@ -129,7 +129,7 @@ func (r *DudasRepository) ResponderDuda(dudaID uint, respuesta string,autoridadI
 		Updates(map[string]interface{}{
 			"respuesta":        &respuesta,
 			"fecha_respuesta":  &now,
-			"autoridad_uteqid":  &autoridadID,
+			"autoridad_uteq_id":  &autoridadID,
 		}).Error
 }
 
