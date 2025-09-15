@@ -19,7 +19,7 @@ func (r *CodigoUsuarioRepository) Crear(usuarioID uint, codigo string) error {
 	record := &models.CodigoUsuario{
 		UsuarioID: usuarioID,
 		Codigo:    codigo,
-		ExpiraEn:  time.Now().Add(10 * time.Minute),
+		ExpiraEn:  time.Now().Add(3 * time.Minute),
 	}
 	return r.db.Create(record).Error
 }
