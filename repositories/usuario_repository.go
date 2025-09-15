@@ -2,11 +2,33 @@ package repositories
 
 import (
 	"ApiEscuela/models"
+	"errors"
+	"strings"
+	"github.com/jackc/pgconn"
 	"gorm.io/gorm"
 )
 
 type UsuarioRepository struct {
 	db *gorm.DB
+}
+
+var (
+	ErrUsuarioDuplicado = errors.New("usuario repetido")
+)
+
+func classifyUniqueUsuarioError(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == "23505" { // unique_violation
+			if strings.Contains(pgErr.Detail, "(usuario)") {
+				return ErrUsuarioDuplicado
+			}
+		}
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return ErrUsuarioDuplicado
+	}
+	return err
 }
 
 func NewUsuarioRepository(db *gorm.DB) *UsuarioRepository {
@@ -15,7 +37,10 @@ func NewUsuarioRepository(db *gorm.DB) *UsuarioRepository {
 
 // CreateUsuario crea un nuevo usuario
 func (r *UsuarioRepository) CreateUsuario(usuario *models.Usuario) error {
-	return r.db.Create(usuario).Error
+	if err := r.db.Create(usuario).Error; err != nil {
+		return classifyUniqueUsuarioError(err)
+	}
+	return nil
 }
 
 // GetUsuarioByID obtiene un usuario por ID
@@ -39,7 +64,10 @@ func (r *UsuarioRepository) GetAllUsuarios() ([]models.Usuario, error) {
 
 // UpdateUsuario actualiza un usuario
 func (r *UsuarioRepository) UpdateUsuario(usuario *models.Usuario) error {
-	return r.db.Save(usuario).Error
+	if err := r.db.Save(usuario).Error; err != nil {
+		return classifyUniqueUsuarioError(err)
+	}
+	return nil
 }
 
 // DeleteUsuario elimina un usuario

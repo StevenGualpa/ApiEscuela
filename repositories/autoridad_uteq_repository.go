@@ -2,11 +2,34 @@ package repositories
 
 import (
 	"ApiEscuela/models"
+	"errors"
+	"strings"
+	"github.com/jackc/pgconn"
 	"gorm.io/gorm"
 )
 
 type AutoridadUTEQRepository struct {
 	db *gorm.DB
+}
+
+var (
+	ErrAutoridadDuplicada = errors.New("autoridad ya existe")
+)
+
+func classifyUniqueAutoridadError(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == "23505" { // unique_violation
+			if strings.Contains(pgErr.Detail, "(persona_id)") {
+				return ErrAutoridadDuplicada
+			}
+			return ErrAutoridadDuplicada
+		}
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return ErrAutoridadDuplicada
+	}
+	return err
 }
 
 func NewAutoridadUTEQRepository(db *gorm.DB) *AutoridadUTEQRepository {
@@ -15,7 +38,18 @@ func NewAutoridadUTEQRepository(db *gorm.DB) *AutoridadUTEQRepository {
 
 // CreateAutoridadUTEQ crea una nueva autoridad UTEQ
 func (r *AutoridadUTEQRepository) CreateAutoridadUTEQ(autoridad *models.AutoridadUTEQ) error {
-	return r.db.Create(autoridad).Error
+	// Prevalidar que no exista otra autoridad con la misma persona
+	var count int64
+	if err := r.db.Model(&models.AutoridadUTEQ{}).Where("persona_id = ?", autoridad.PersonaID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrAutoridadDuplicada
+	}
+	if err := r.db.Create(autoridad).Error; err != nil {
+		return classifyUniqueAutoridadError(err)
+	}
+	return nil
 }
 
 // GetAutoridadUTEQByID obtiene una autoridad UTEQ por ID
@@ -39,7 +73,20 @@ func (r *AutoridadUTEQRepository) GetAllAutoridadesUTEQ() ([]models.AutoridadUTE
 
 // UpdateAutoridadUTEQ actualiza una autoridad UTEQ
 func (r *AutoridadUTEQRepository) UpdateAutoridadUTEQ(autoridad *models.AutoridadUTEQ) error {
-	return r.db.Save(autoridad).Error
+	// Verificar duplicado por persona en otro registro
+	var count int64
+	if err := r.db.Model(&models.AutoridadUTEQ{}).
+		Where("persona_id = ? AND id <> ?", autoridad.PersonaID, autoridad.ID).
+		Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrAutoridadDuplicada
+	}
+	if err := r.db.Save(autoridad).Error; err != nil {
+		return classifyUniqueAutoridadError(err)
+	}
+	return nil
 }
 
 // DeleteAutoridadUTEQ elimina una autoridad UTEQ y en cascada su usuario y persona

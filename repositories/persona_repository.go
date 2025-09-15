@@ -2,11 +2,40 @@ package repositories
 
 import (
 	"ApiEscuela/models"
+	"errors"
+	"strings"
+	"github.com/jackc/pgconn"
 	"gorm.io/gorm"
 )
 
 type PersonaRepository struct {
 	db *gorm.DB
+}
+
+var (
+	ErrCedulaDuplicada = errors.New("cedula repetida")
+	ErrCorreoDuplicado = errors.New("correo repetido")
+	ErrPersonaYaExiste = errors.New("persona ya existe")
+)
+
+func classifyUniquePersonaError(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == "23505" { // unique_violation
+			det := pgErr.Detail
+			if strings.Contains(det, "(cedula)") {
+				return ErrCedulaDuplicada
+			}
+			if strings.Contains(det, "(correo)") {
+				return ErrCorreoDuplicado
+			}
+			return ErrPersonaYaExiste
+		}
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return ErrPersonaYaExiste
+	}
+	return err
 }
 
 func NewPersonaRepository(db *gorm.DB) *PersonaRepository {
@@ -15,7 +44,10 @@ func NewPersonaRepository(db *gorm.DB) *PersonaRepository {
 
 // CreatePersona crea una nueva persona
 func (r *PersonaRepository) CreatePersona(persona *models.Persona) error {
-	return r.db.Create(persona).Error
+	if err := r.db.Create(persona).Error; err != nil {
+		return classifyUniquePersonaError(err)
+	}
+	return nil
 }
 
 // GetPersonaByID obtiene una persona por ID
@@ -54,7 +86,10 @@ func (r *PersonaRepository) GetAllPersonas() ([]models.Persona, error) {
 
 // UpdatePersona actualiza una persona
 func (r *PersonaRepository) UpdatePersona(persona *models.Persona) error {
-	return r.db.Save(persona).Error
+	if err := r.db.Save(persona).Error; err != nil {
+		return classifyUniquePersonaError(err)
+	}
+	return nil
 }
 
 // DeletePersona elimina una persona

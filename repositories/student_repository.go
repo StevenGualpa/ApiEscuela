@@ -2,11 +2,34 @@ package repositories
 
 import (
 	"ApiEscuela/models"
+	"errors"
+	"strings"
+	"github.com/jackc/pgconn"
 	"gorm.io/gorm"
 )
 
 type EstudianteRepository struct {
 	db *gorm.DB
+}
+
+var (
+	ErrEstudianteDuplicado = errors.New("estudiante ya existe")
+)
+
+func classifyUniqueEstudianteError(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == "23505" { // unique_violation
+			if strings.Contains(pgErr.Detail, "(persona_id)") {
+				return ErrEstudianteDuplicado
+			}
+			return ErrEstudianteDuplicado
+		}
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return ErrEstudianteDuplicado
+	}
+	return err
 }
 
 func NewEstudianteRepository(db *gorm.DB) *EstudianteRepository {
@@ -15,7 +38,18 @@ func NewEstudianteRepository(db *gorm.DB) *EstudianteRepository {
 
 // CreateEstudiante crea un nuevo estudiante
 func (r *EstudianteRepository) CreateEstudiante(estudiante *models.Estudiante) error {
-	return r.db.Create(estudiante).Error
+	// Prevalidar que no exista estudiante para la misma persona
+	var count int64
+	if err := r.db.Model(&models.Estudiante{}).Where("persona_id = ?", estudiante.PersonaID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrEstudianteDuplicado
+	}
+	if err := r.db.Create(estudiante).Error; err != nil {
+		return classifyUniqueEstudianteError(err)
+	}
+	return nil
 }
 
 // GetEstudianteByID obtiene un estudiante por ID
@@ -41,7 +75,18 @@ func (r *EstudianteRepository) GetAllEstudiantes() ([]models.Estudiante, error) 
 
 // UpdateEstudiante actualiza un estudiante
 func (r *EstudianteRepository) UpdateEstudiante(estudiante *models.Estudiante) error {
-	return r.db.Save(estudiante).Error
+	// Verificar duplicado por persona en otro registro
+	var count int64
+	if err := r.db.Model(&models.Estudiante{}).Where("persona_id = ? AND id <> ?", estudiante.PersonaID, estudiante.ID).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrEstudianteDuplicado
+	}
+	if err := r.db.Save(estudiante).Error; err != nil {
+		return classifyUniqueEstudianteError(err)
+	}
+	return nil
 }
 
 // DeleteEstudiante elimina un estudiante y en cascada su usuario y persona

@@ -27,9 +27,12 @@ func (h *UsuarioHandler) CreateUsuario(c *fiber.Ctx) error {
 	}
 
 	if err := h.usuarioRepo.CreateUsuario(&usuario); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede crear el usuario",
-		})
+		switch err {
+		case repositories.ErrUsuarioDuplicado:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "usuario repetido"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "No se puede crear el usuario"})
+		}
 	}
 
 	// No devolver la contraseña en la respuesta
@@ -120,9 +123,12 @@ func (h *UsuarioHandler) UpdateUsuario(c *fiber.Ctx) error {
 	}
 
 	if err := h.usuarioRepo.UpdateUsuario(usuario); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede actualizar el usuario",
-		})
+		switch err {
+		case repositories.ErrUsuarioDuplicado:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "usuario repetido"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "No se puede actualizar el usuario"})
+		}
 	}
 
 	// No devolver la contraseña

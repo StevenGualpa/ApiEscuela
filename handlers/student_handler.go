@@ -27,9 +27,12 @@ func (h *EstudianteHandler) CreateEstudiante(c *fiber.Ctx) error {
 	}
 
 	if err := h.estudianteRepo.CreateEstudiante(&estudiante); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede crear el estudiante",
-		})
+		switch err {
+		case repositories.ErrEstudianteDuplicado:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "estudiante ya existe"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "No se puede crear el estudiante"})
+		}
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(estudiante)
@@ -113,9 +116,12 @@ func (h *EstudianteHandler) UpdateEstudiante(c *fiber.Ctx) error {
 	}
 
 	if err := h.estudianteRepo.UpdateEstudiante(estudiante); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede actualizar el estudiante",
-		})
+		switch err {
+		case repositories.ErrEstudianteDuplicado:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "estudiante ya existe"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "No se puede actualizar el estudiante"})
+		}
 	}
 
 	return c.JSON(estudiante)

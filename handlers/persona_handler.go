@@ -27,9 +27,16 @@ func (h *PersonaHandler) CreatePersona(c *fiber.Ctx) error {
 	}
 
 	if err := h.personaRepo.CreatePersona(&persona); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede crear la persona",
-		})
+		switch err {
+		case repositories.ErrCedulaDuplicada:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "cedula repetida"})
+		case repositories.ErrCorreoDuplicado:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "correo repetido"})
+		case repositories.ErrPersonaYaExiste:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "persona ya existe"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "No se puede crear la persona"})
+		}
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(persona)
@@ -89,9 +96,16 @@ func (h *PersonaHandler) UpdatePersona(c *fiber.Ctx) error {
 	}
 
 	if err := h.personaRepo.UpdatePersona(persona); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede actualizar la persona",
-		})
+		switch err {
+		case repositories.ErrCedulaDuplicada:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "cedula repetida"})
+		case repositories.ErrCorreoDuplicado:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "correo repetido"})
+		case repositories.ErrPersonaYaExiste:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "persona ya existe"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "No se puede actualizar la persona"})
+		}
 	}
 
 	return c.JSON(persona)

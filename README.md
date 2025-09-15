@@ -23,6 +23,8 @@ Un backend completo desarrollado en Go para la gestión integral de visitas educ
 6. [📝 Ejemplos de Uso](#-ejemplos-de-uso)
 7. [⚙️ Instalación](#️-instalación)
 8. [🛠️ Tecnologías](#️-tecnologías)
+9. [🔁 Recuperación de contraseña (OTP)](#-recuperación-de-contraseña-otp)
+10. [⚠️ Manejo de errores por entidad](#️-manejo-de-errores-por-entidad-duplicados-y-validaciones)
 
 ## 🔐 Sistema de Autenticación
 
@@ -32,6 +34,9 @@ Un backend completo desarrollado en Go para la gestión integral de visitas educ
 - `POST /auth/login` - Iniciar sesión
 - `POST /auth/register` - Registrar usuario
 - `POST /auth/validate-token` - Validar token
+- `POST /auth/recover-password` - Generar y enviar OTP por cédula
+- `POST /auth/verify-code` - Verificar OTP
+- `POST /auth/reset-password` - Restablecer contraseña por usuario_id
 - `GET /` - Página de bienvenida
 - `GET /health` - Estado de salud
 
@@ -89,7 +94,7 @@ curl -X GET http://localhost:3000/api/estudiantes \
 |---------------------|-----------|-------------|
 | **VisitaDetalleEstudiantesUniversitarios** | Programas ↔ Estudiantes | Estudiantes asignados a programas de visita |
 | **DetalleAutoridadDetallesVisita** | Programas ↔ Autoridades | Autoridades UTEQ asignadas a programas |
-| **VisitaDetalle** | Programas ��� Actividades | Actividades programadas en cada visita |
+| **VisitaDetalle** | Programas ↔ Actividades | Actividades programadas en cada visita |
 
 ### 🏛️ Patrón de Capas
 
@@ -693,7 +698,7 @@ Flujo público para recuperación de contraseña basado en código temporal (OTP
 Características:
 - Código OTP numérico de 6 dígitos.
 - Generado con semilla (tiempo + personaID) para variabilidad.
-- Persistencia por usuario en la tabla `codigosusuarios` con expiración de 10 minutos.
+- Persistencia por usuario en la tabla `codigosusuarios` con expiración de 3 minutos.
 - Evita reenvío si existe un código vigente.
 
 Tabla relacionada: codigosusuarios
@@ -774,3 +779,32 @@ curl -X POST http://localhost:3000/auth/reset-password \
   -H "Content-Type: application/json" \
   -d '{"usuario_id":123, "clave":"nuevaClave123"}'
 ```
+
+---
+
+## ⚠️ Manejo de errores por entidad (duplicados y validaciones)
+
+Se implementó manejo de errores específico para restricciones únicas y duplicados por entidad. Cuando se detecta un duplicado, la API responde con:
+- HTTP 409 Conflict
+- Body JSON con el campo "error" y un mensaje claro
+
+Internamente se clasifican errores de PostgreSQL (PgError 23505 unique_violation) y gorm.ErrDuplicatedKey.
+
+Entidades cubiertas y mensajes
+- Persona
+  - cedula repetida → 409 { "error": "cedula repetida" }
+  - correo repetido → 409 { "error": "correo repetido" }
+  - persona ya existe → 409 { "error": "persona ya existe" }
+- Usuario
+  - usuario repetido → 409 { "error": "usuario repetido" }
+- Autoridad UTEQ
+  - autoridad ya existe (duplicado por persona_id) → 409 { "error": "autoridad ya existe" }
+- Estudiante
+  - estudiante ya existe (duplicado por persona_id) → 409 { "error": "estudiante ya existe" }
+- Estudiante Universitario
+  - estudiante universitario ya existe (duplicado por persona_id) → 409 { "error": "estudiante universitario ya existe" }
+
+Notas
+- Además de clasificar errores de BD, se realizan prevalidaciones antes de crear/actualizar para evitar duplicados evidentes.
+- Otros errores no relacionados con duplicados siguen devolviendo 500 con mensajes genéricos (por ejemplo: "No se puede crear ...").
+- Si en tu esquema existen otras restricciones únicas (por ejemplo, combinaciones de campos), se pueden extender los detectores para devolver mensajes específicos.

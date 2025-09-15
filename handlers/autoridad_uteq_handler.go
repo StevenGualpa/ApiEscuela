@@ -27,9 +27,12 @@ func (h *AutoridadUTEQHandler) CreateAutoridadUTEQ(c *fiber.Ctx) error {
 	}
 
 	if err := h.autoridadRepo.CreateAutoridadUTEQ(&autoridad); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede crear la autoridad UTEQ",
-		})
+		switch err {
+		case repositories.ErrAutoridadDuplicada:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "autoridad ya existe"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "No se puede crear la autoridad UTEQ"})
+		}
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(autoridad)
@@ -113,9 +116,12 @@ func (h *AutoridadUTEQHandler) UpdateAutoridadUTEQ(c *fiber.Ctx) error {
 	}
 
 	if err := h.autoridadRepo.UpdateAutoridadUTEQ(autoridad); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "No se puede actualizar la autoridad UTEQ",
-		})
+		switch err {
+		case repositories.ErrAutoridadDuplicada:
+			return c.Status(fiber.StatusConflict).JSON(fiber.Map{"error": "autoridad ya existe"})
+		default:
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "No se puede actualizar la autoridad UTEQ"})
+		}
 	}
 
 	return c.JSON(autoridad)
