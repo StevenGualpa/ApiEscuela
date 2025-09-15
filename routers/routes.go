@@ -14,6 +14,9 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	auth.Post("/login", handlers.AuthHandler.Login)
 	auth.Post("/register", handlers.AuthHandler.Register)
 	auth.Post("/validate-token", handlers.AuthHandler.ValidateToken)
+	auth.Post("/recover-password", handlers.AuthHandler.RecoverPassword)
+	auth.Post("/verify-code", handlers.AuthHandler.VerifyCode)
+	auth.Post("/reset-password", handlers.AuthHandler.ResetPassword)
 
 	// ==================== RUTAS PROTEGIDAS (CON AUTENTICACIÓN JWT) ====================
 	// Aplicar middleware JWT a todas las rutas protegidas

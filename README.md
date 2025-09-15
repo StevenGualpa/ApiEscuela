@@ -683,3 +683,94 @@ Para soporte técnico o consultas, contactar al equipo de desarrollo de la UTEQ.
 **Desarrollado para la Universidad Técnica Estatal de Quevedo (UTEQ)**
 
 **🔐 Versión 2.1 - Sistema Completo con Tablas Transaccionales**
+
+---
+
+## 🔁 Recuperación de contraseña (OTP)
+
+Flujo público para recuperación de contraseña basado en código temporal (OTP) enviado por correo.
+
+Características:
+- Código OTP numérico de 6 dígitos.
+- Generado con semilla (tiempo + personaID) para variabilidad.
+- Persistencia por usuario en la tabla `codigosusuarios` con expiración de 10 minutos.
+- Evita reenvío si existe un código vigente.
+
+Tabla relacionada: codigosusuarios
+- id (gorm.Model)
+- usuario_id (uint, index, not null)
+- codigo (string, size:10, index, not null)
+- expira_en (datetime, index, not null)
+
+Endpoints públicos
+1) Generar/Enviar código
+- POST /auth/recover-password
+- Body JSON:
+  {
+    "cedula": "1250328067"
+  }
+- Respuestas esperadas:
+  - 200: { "message": "Si la cédula existe, se envió un correo con la contraseña temporal" }
+  - 400: { "error": "codigo ya enviado" } si existe un código vigente para algún usuario de esa cédula
+  - 400: { "error": "la persona no tiene un correo registrado" }
+  - 400: { "error": "no existen usuarios asociados a la persona" }
+  - 400/404: { "error": "persona no encontrada" } si la cédula no existe
+
+2) Verificar código
+- POST /auth/verify-code
+- Body JSON:
+  {
+    "codigo": "123456"
+  }
+- Respuestas:
+  - 200: { "estado": "verificado", "usuario_id": <id> }
+  - 400: { "estado": "caducado" }
+  - 404: { "estado": "no existe" }
+
+3) Restablecer contraseña por usuario
+- POST /auth/reset-password
+- Body JSON:
+  {
+    "usuario_id": 123,
+    "clave": "nuevaClave"
+  }
+- Respuestas:
+  - 200: { "message": "clave actualizada" }
+  - 400: { "error": "usuario no encontrado" | "usuario_id y clave son requeridos" | "La clave debe tener al menos 6 caracteres" }
+
+Notas
+- En este entorno de pruebas el guardado de contraseña NO está hasheado. Para producción se recomienda habilitar bcrypt.
+- El OTP se guarda por cada usuario asociado a la persona encontrada.
+- Si hay múltiples usuarios para una misma cédula, se genera el mismo OTP y se crea un registro por usuario.
+
+Configuración SMTP (pruebas)
+- Valores por defecto embebidos en el código (Gmail App Password):
+  - SMTP_HOST=smtp.gmail.com
+  - SMTP_PORT=587
+  - SMTP_USER=
+  - SMTP_PASS=
+  - SMTP_FROM=
+  - SMTP_FROM_NAME=
+- En producción, se puede sobrescribir con variables de entorno (mismos nombres) sin cambiar código.
+
+Ejemplos curl
+1) Solicitar OTP:
+```
+curl -X POST http://localhost:3000/auth/recover-password \
+  -H "Content-Type: application/json" \
+  -d '{"cedula":"1250328067"}'
+```
+
+2) Verificar OTP:
+```
+curl -X POST http://localhost:3000/auth/verify-code \
+  -H "Content-Type: application/json" \
+  -d '{"codigo":"123456"}'
+```
+
+3) Restablecer contraseña:
+```
+curl -X POST http://localhost:3000/auth/reset-password \
+  -H "Content-Type: application/json" \
+  -d '{"usuario_id":123, "clave":"nuevaClave123"}'
+```

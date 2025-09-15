@@ -4,18 +4,33 @@ import (
 	"ApiEscuela/middleware"
 	"ApiEscuela/models"
 	"ApiEscuela/repositories"
+	"crypto/rand"
 	"errors"
+	"fmt"
+	mrand "math/rand"
+	"math/big"
+	"net/smtp"
+	"os"
+	"strings"
+	"time"
+	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
-	usuarioRepo *repositories.UsuarioRepository
+	usuarioRepo       *repositories.UsuarioRepository
+	personaRepo       *repositories.PersonaRepository
+	codigoUsuarioRepo *repositories.CodigoUsuarioRepository
 }
 
-func NewAuthService(usuarioRepo *repositories.UsuarioRepository) *AuthService {
+var ErrPersonaNoEncontrada = errors.New("persona no encontrada")
+
+func NewAuthService(usuarioRepo *repositories.UsuarioRepository, personaRepo *repositories.PersonaRepository, codigoUsuarioRepo *repositories.CodigoUsuarioRepository) *AuthService {
 	return &AuthService{
-		usuarioRepo: usuarioRepo,
+		usuarioRepo:       usuarioRepo,
+		personaRepo:       personaRepo,
+		codigoUsuarioRepo: codigoUsuarioRepo,
 	}
 }
 
@@ -167,11 +182,162 @@ func (s *AuthService) ChangePassword(userID uint, oldPassword, newPassword strin
 	return nil
 }
 
+// ResetPassword actualiza la contraseña de un usuario por ID (sin contraseña actual)
+func (s *AuthService) ResetPassword(userID uint, newPassword string) error {
+	if strings.TrimSpace(newPassword) == "" {
+		return errors.New("clave requerida")
+	}
+	usuario, err := s.usuarioRepo.GetUsuarioByID(userID)
+	if err != nil {
+		return errors.New("usuario no encontrado")
+	}
+	usuario.Contraseña = newPassword
+	usuario.Verificado = true
+	if err := s.usuarioRepo.UpdateUsuario(usuario); err != nil {
+		return errors.New("error al actualizar contraseña")
+	}
+	return nil
+}
+
 // GenerateNewToken genera un nuevo token JWT para un usuario
 func (s *AuthService) GenerateNewToken(userID uint, username string, tipoUsuarioID uint) (string, error) {
 	return middleware.GenerateJWT(userID, username, tipoUsuarioID)
 }
 
+// RecoverPassword genera una contraseña temporal y la envía por correo
+func (s *AuthService) RecoverPassword(cedula string) error {
+	if strings.TrimSpace(cedula) == "" {
+		return errors.New("la cédula es requerida")
+	}
+
+	normCedula := normalizeCedula(cedula)
+	persona, err := s.personaRepo.GetPersonaByCedula(normCedula)
+	if err != nil || persona == nil {
+		return ErrPersonaNoEncontrada
+	}
+	if strings.TrimSpace(persona.Correo) == "" {
+		return errors.New("la persona no tiene un correo registrado")
+	}
+
+	// Preferir los usuarios pre-cargados en la persona; si no hay, hacer fallback al repositorio
+	usuarios := persona.Usuarios
+	if len(usuarios) == 0 {
+		var errRepo error
+		usuarios, errRepo = s.usuarioRepo.GetUsuariosByPersona(persona.ID)
+		if errRepo != nil || len(usuarios) == 0 {
+			return errors.New("no existen usuarios asociados a la persona")
+		}
+	}
+
+	// Verificar si ya existe un código vigente para alguno de los usuarios
+	for _, u := range usuarios {
+		vigente, err := s.codigoUsuarioRepo.ExisteVigentePorUsuario(u.ID)
+		if err != nil {
+			return errors.New("error al verificar códigos existentes")
+		}
+		if vigente {
+			return errors.New("codigo ya enviado")
+		}
+	}
+
+	// Generar código temporal numérico (6 dígitos) con semilla
+	seed := time.Now().UnixNano() ^ int64(persona.ID)
+	otp := generateNumericOTP(6, seed)
+
+	// Guardar el código para cada usuario asociado
+	for _, u := range usuarios {
+		if err := s.codigoUsuarioRepo.Crear(u.ID, otp); err != nil {
+			return errors.New("no se pudo guardar el código temporal")
+		}
+	}
+
+	// Construir contenido de correo
+	subject := "Recuperación de contraseña - ApiEscuela"
+	usernames := make([]string, 0, len(usuarios))
+	for _, u := range usuarios {
+		usernames = append(usernames, u.Usuario)
+	}
+	body := fmt.Sprintf(
+		"<p>Hola %s,</p><p>Has solicitado recuperar tu contraseña.</p><p>Usa el siguiente código temporal de 6 dígitos para completar el proceso:</p><h2 style=\"letter-spacing:2px\">%s</h2><p>Usuarios asociados: %s</p><p>Si no solicitaste este cambio, ignora este mensaje.</p>",
+		persona.Nombre, otp, strings.Join(usernames, ", "),
+	)
+
+	return s.sendEmail(persona.Correo, subject, body)
+}
+
+// sendEmail envía un correo usando SMTP con contenido HTML básico
+func (s *AuthService) sendEmail(to, subject, htmlBody string) error {
+	// Valores por defecto para entorno de pruebas (Gmail con App Password)
+	host := "smtp.gmail.com"
+	port := "587"
+	user := "bfpaquete0045@gmail.com"
+	pass := "ublqnzypqcbhxhqg" // Contraseña de aplicación (sin espacios)
+	from := "bfpaquete0045@gmail.com"
+	fromName := "ApiEscuela"
+
+	// Permitir sobreescribir con variables de entorno si están definidas (producción)
+	if v := os.Getenv("SMTP_HOST"); v != "" { host = v }
+	if v := os.Getenv("SMTP_PORT"); v != "" { port = v }
+	if v := os.Getenv("SMTP_USER"); v != "" { user = v }
+	if v := os.Getenv("SMTP_PASS"); v != "" { pass = v }
+	if v := os.Getenv("SMTP_FROM"); v != "" { from = v }
+	if v := os.Getenv("SMTP_FROM_NAME"); v != "" { fromName = v }
+
+	addr := host + ":" + port
+	auth := smtp.PlainAuth("", user, pass, host)
+
+	// Mensaje MIME
+	headers := make(map[string]string)
+	headers["From"] = fmt.Sprintf("%s <%s>", fromName, from)
+	headers["To"] = to
+	headers["Subject"] = subject
+	headers["MIME-Version"] = "1.0"
+	headers["Content-Type"] = "text/html; charset=\"UTF-8\""
+
+	var msgBuilder strings.Builder
+	for k, v := range headers {
+		msgBuilder.WriteString(fmt.Sprintf("%s: %s\r\n", k, v))
+	}
+	msgBuilder.WriteString("\r\n")
+	msgBuilder.WriteString(htmlBody)
+
+	return smtp.SendMail(addr, auth, from, []string{to}, []byte(msgBuilder.String()))
+}
+
+// generateRandomPassword crea una contraseña aleatoria alfanumérica
+func normalizeCedula(s string) string {
+	s = strings.TrimSpace(s)
+	var b strings.Builder
+	for _, r := range s {
+		if unicode.IsDigit(r) {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+// generateNumericOTP genera un OTP numérico de longitud fija usando una semilla
+func generateNumericOTP(length int, seed int64) string {
+	r := mrand.New(mrand.NewSource(seed))
+	var b strings.Builder
+	for i := 0; i < length; i++ {
+		b.WriteByte(byte('0' + r.Intn(10)))
+	}
+	return b.String()
+}
+
+func generateRandomPassword(length int) (string, error) {
+	const letters = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+	b := make([]byte, length)
+	for i := range b {
+		idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(letters))))
+		if err != nil {
+			return "", err
+		}
+		b[i] = letters[idx.Int64()]
+	}
+	return string(b), nil
+}
 
 // ValidateToken valida un token JWT y devuelve las claims
 func (s *AuthService) ValidateToken(tokenString string) (bool, *middleware.JWTClaims) {
@@ -180,4 +346,20 @@ func (s *AuthService) ValidateToken(tokenString string) (bool, *middleware.JWTCl
 		return false, nil
 	}
 	return true, claims
+}
+
+// VerifyCodigo verifica un código: no existe | caducado | verificado
+func (s *AuthService) VerifyCodigo(codigo string) (string, uint, error) {
+	codigo = strings.TrimSpace(codigo)
+	if codigo == "" {
+		return "", 0, errors.New("codigo requerido")
+	}
+	rec, err := s.codigoUsuarioRepo.FindLatestByCodigo(codigo)
+	if err != nil || rec == nil {
+		return "no existe", 0, nil
+	}
+	if time.Now().After(rec.ExpiraEn) {
+		return "caducado", 0, nil
+	}
+	return "verificado", rec.UsuarioID, nil
 }

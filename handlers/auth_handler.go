@@ -4,6 +4,7 @@ import (
 	"ApiEscuela/middleware"
 	"ApiEscuela/services"
 	"time"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -80,6 +81,49 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 }
 
 // Register maneja el registro de nuevos usuarios
+// RecoverPassword maneja la recuperación de contraseña por cédula (público)
+func (h *AuthHandler) RecoverPassword(c *fiber.Ctx) error {
+	var req struct {
+		Cedula string `json:"cedula"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se puede procesar el JSON"})
+	}
+	if strings.TrimSpace(req.Cedula) == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "La cédula es requerida"})
+	}
+	if err := h.authService.RecoverPassword(req.Cedula); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "Si la cédula existe, se envió un correo con la contraseña temporal"})
+}
+
+// VerifyCode maneja la verificación del código temporal (público)
+func (h *AuthHandler) VerifyCode(c *fiber.Ctx) error {
+	var req struct{
+		Codigo string `json:"codigo"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se puede procesar el JSON"})
+	}
+
+	estado, userID, err := h.authService.VerifyCodigo(req.Codigo)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	switch estado {
+	case "no existe":
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"estado": "no existe"})
+	case "caducado":
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"estado": "caducado"})
+	case "verificado":
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{"estado": "verificado", "usuario_id": userID})
+	default:
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"estado": estado})
+	}
+}
+
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var registerReq services.RegisterRequest
 	
@@ -117,6 +161,27 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 }
 
 // ChangePassword maneja el cambio de contraseña
+// ResetPassword maneja el reseteo de contraseña por ID de usuario (público)
+func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
+	var req struct{
+		UsuarioID uint   `json:"usuario_id"`
+		Clave     string `json:"clave"`
+	}
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se puede procesar el JSON"})
+	}
+	if req.UsuarioID == 0 || strings.TrimSpace(req.Clave) == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "usuario_id y clave son requeridos"})
+	}
+	if len(req.Clave) < 6 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "La clave debe tener al menos 6 caracteres"})
+	}
+	if err := h.authService.ResetPassword(req.UsuarioID, req.Clave); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "clave actualizada"})
+}
+
 func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
 	// Obtener ID del usuario del contexto (del JWT)
 	userID := c.Locals("user_id").(uint)
