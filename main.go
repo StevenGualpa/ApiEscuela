@@ -105,6 +105,7 @@ func main() {
 		&models.Dudas{},
 		&models.VisitaDetalleEstudiantesUniversitarios{},
 		&models.CodigoUsuario{},
+		&models.Noticia{},
 	); err != nil {
 		log.Fatalf("Error en la automigración: %v", err)
 	}
@@ -127,6 +128,7 @@ func main() {
 	dudasRepo := repositories.NewDudasRepository(db)
 	visitaDetalleEstudiantesUniversitariosRepo := repositories.NewVisitaDetalleEstudiantesUniversitariosRepository(db)
 	codigoUsuarioRepo := repositories.NewCodigoUsuarioRepository(db)
+	noticiaRepo := repositories.NewNoticiaRepository(db)
 
 	// Inicializar handlers
 	estudianteHandler := handlers.NewEstudianteHandler(estudianteRepo)
@@ -145,6 +147,7 @@ func main() {
 	visitaDetalleHandler := handlers.NewVisitaDetalleHandler(visitaDetalleRepo)
 	dudasHandler := handlers.NewDudasHandler(dudasRepo)
 	visitaDetalleEstudiantesUniversitariosHandler := handlers.NewVisitaDetalleEstudiantesUniversitariosHandler(visitaDetalleEstudiantesUniversitariosRepo)
+	noticiaHandler := handlers.NewNoticiaHandler(noticiaRepo)
 
 	// Inicializar servicios
 	authService := services.NewAuthService(usuarioRepo, personaRepo, codigoUsuarioRepo)
@@ -170,6 +173,7 @@ func main() {
 		visitaDetalleHandler,
 		dudasHandler,
 		visitaDetalleEstudiantesUniversitariosHandler,
+		noticiaHandler,
 		authHandler,
 	)
 

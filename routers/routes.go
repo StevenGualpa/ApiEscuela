@@ -213,27 +213,40 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	visitaDetalleEstudiantes.Delete("/programa-visita/:programa_visita_id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.DeleteByProgramaVisita)
 	visitaDetalleEstudiantes.Delete("/estudiante/:estudiante_id", handlers.VisitaDetalleEstudiantesUniversitariosHandler.DeleteByEstudiante)
 	visitaDetalleEstudiantes.Get("/estadisticas", handlers.VisitaDetalleEstudiantesUniversitariosHandler.GetEstadisticasParticipacion)
+
+	// ==================== NOTICIAS ====================
+	noticias := protected.Group("/noticias")
+	noticias.Post("/", handlers.NoticiaHandler.CreateNoticia)
+	noticias.Get("/", handlers.NoticiaHandler.GetAllNoticias)
+	noticias.Get("/:id", handlers.NoticiaHandler.GetNoticia)
+	noticias.Put("/:id", handlers.NoticiaHandler.UpdateNoticia)
+	noticias.Delete("/:id", handlers.NoticiaHandler.DeleteNoticia)
+	noticias.Get("/autoridad/:autoridad_id", handlers.NoticiaHandler.GetNoticiasByAutoridad)
+	noticias.Get("/titulo/:titulo", handlers.NoticiaHandler.GetNoticiasByTitulo)
+	noticias.Get("/descripcion/:descripcion", handlers.NoticiaHandler.GetNoticiasByDescripcion)
+	noticias.Get("/buscar/:termino", handlers.NoticiaHandler.SearchNoticias)
 }
 
 // AllHandlers contiene todos los handlers de la aplicación
 type AllHandlers struct {
-	EstudianteHandler                      *handlers.EstudianteHandler
-	PersonaHandler                         *handlers.PersonaHandler
-	ProvinciaHandler                       *handlers.ProvinciaHandler
-	CiudadHandler                          *handlers.CiudadHandler
-	InstitucionHandler                     *handlers.InstitucionHandler
-	TipoUsuarioHandler                     *handlers.TipoUsuarioHandler
-	UsuarioHandler                         *handlers.UsuarioHandler
-	EstudianteUnivHandler                  *handlers.EstudianteUniversitarioHandler
-	AutoridadHandler                       *handlers.AutoridadUTEQHandler
-	TematicaHandler                        *handlers.TematicaHandler
-	ActividadHandler                       *handlers.ActividadHandler
-	ProgramaVisitaHandler                  *handlers.ProgramaVisitaHandler
-	DetalleAutoridadDetallesVisitaHandler  *handlers.DetalleAutoridadDetallesVisitaHandler
-	VisitaDetalleHandler                   *handlers.VisitaDetalleHandler
-	DudasHandler                           *handlers.DudasHandler
+	EstudianteHandler                             *handlers.EstudianteHandler
+	PersonaHandler                                *handlers.PersonaHandler
+	ProvinciaHandler                              *handlers.ProvinciaHandler
+	CiudadHandler                                 *handlers.CiudadHandler
+	InstitucionHandler                            *handlers.InstitucionHandler
+	TipoUsuarioHandler                            *handlers.TipoUsuarioHandler
+	UsuarioHandler                                *handlers.UsuarioHandler
+	EstudianteUnivHandler                         *handlers.EstudianteUniversitarioHandler
+	AutoridadHandler                              *handlers.AutoridadUTEQHandler
+	TematicaHandler                               *handlers.TematicaHandler
+	ActividadHandler                              *handlers.ActividadHandler
+	ProgramaVisitaHandler                         *handlers.ProgramaVisitaHandler
+	DetalleAutoridadDetallesVisitaHandler         *handlers.DetalleAutoridadDetallesVisitaHandler
+	VisitaDetalleHandler                          *handlers.VisitaDetalleHandler
+	DudasHandler                                  *handlers.DudasHandler
 	VisitaDetalleEstudiantesUniversitariosHandler *handlers.VisitaDetalleEstudiantesUniversitariosHandler
-	AuthHandler                            *handlers.AuthHandler
+	NoticiaHandler                                *handlers.NoticiaHandler
+	AuthHandler                                   *handlers.AuthHandler
 }
 
 // NewAllHandlers crea una instancia con todos los handlers
@@ -254,6 +267,7 @@ func NewAllHandlers(
 	visitaDetalleHandler *handlers.VisitaDetalleHandler,
 	dudasHandler *handlers.DudasHandler,
 	visitaDetalleEstudiantesUniversitariosHandler *handlers.VisitaDetalleEstudiantesUniversitariosHandler,
+	noticiaHandler *handlers.NoticiaHandler,
 	authHandler *handlers.AuthHandler,
 ) *AllHandlers {
 	return &AllHandlers{
@@ -273,6 +287,7 @@ func NewAllHandlers(
 		VisitaDetalleHandler:                  visitaDetalleHandler,
 		DudasHandler:                          dudasHandler,
 		VisitaDetalleEstudiantesUniversitariosHandler: visitaDetalleEstudiantesUniversitariosHandler,
-		AuthHandler:                           authHandler,
+		NoticiaHandler: noticiaHandler,
+		AuthHandler:    authHandler,
 	}
 }
