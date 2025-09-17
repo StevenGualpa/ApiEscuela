@@ -148,6 +148,7 @@ func main() {
 	dudasHandler := handlers.NewDudasHandler(dudasRepo)
 	visitaDetalleEstudiantesUniversitariosHandler := handlers.NewVisitaDetalleEstudiantesUniversitariosHandler(visitaDetalleEstudiantesUniversitariosRepo)
 	noticiaHandler := handlers.NewNoticiaHandler(noticiaRepo)
+	uploadHandler := handlers.NewUploadHandler()
 
 	// Inicializar servicios
 	authService := services.NewAuthService(usuarioRepo, personaRepo, codigoUsuarioRepo)
@@ -174,6 +175,7 @@ func main() {
 		dudasHandler,
 		visitaDetalleEstudiantesUniversitariosHandler,
 		noticiaHandler,
+		uploadHandler,
 		authHandler,
 	)
 

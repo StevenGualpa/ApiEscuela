@@ -3,6 +3,7 @@ package routers
 import (
 	"ApiEscuela/handlers"
 	"ApiEscuela/middleware"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,6 +18,12 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	auth.Post("/recover-password", handlers.AuthHandler.RecoverPassword)
 	auth.Post("/verify-code", handlers.AuthHandler.VerifyCode)
 	auth.Post("/reset-password", handlers.AuthHandler.ResetPassword)
+
+	// ==================== UPLOAD DE ARCHIVOS (PÚBLICO) ====================
+	app.Post("/api/upload/", handlers.UploadHandler.UploadFile)
+
+	// ==================== SERVIR ARCHIVOS ESTÁTICOS (PÚBLICO) ====================
+	app.Get("/api/files/:tipo/:nombre", handlers.UploadHandler.GetFile)
 
 	// ==================== RUTAS PROTEGIDAS (CON AUTENTICACIÓN JWT) ====================
 	// Aplicar middleware JWT a todas las rutas protegidas
@@ -225,6 +232,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	noticias.Get("/titulo/:titulo", handlers.NoticiaHandler.GetNoticiasByTitulo)
 	noticias.Get("/descripcion/:descripcion", handlers.NoticiaHandler.GetNoticiasByDescripcion)
 	noticias.Get("/buscar/:termino", handlers.NoticiaHandler.SearchNoticias)
+
 }
 
 // AllHandlers contiene todos los handlers de la aplicación
@@ -246,6 +254,7 @@ type AllHandlers struct {
 	DudasHandler                                  *handlers.DudasHandler
 	VisitaDetalleEstudiantesUniversitariosHandler *handlers.VisitaDetalleEstudiantesUniversitariosHandler
 	NoticiaHandler                                *handlers.NoticiaHandler
+	UploadHandler                                 *handlers.UploadHandler
 	AuthHandler                                   *handlers.AuthHandler
 }
 
@@ -268,6 +277,7 @@ func NewAllHandlers(
 	dudasHandler *handlers.DudasHandler,
 	visitaDetalleEstudiantesUniversitariosHandler *handlers.VisitaDetalleEstudiantesUniversitariosHandler,
 	noticiaHandler *handlers.NoticiaHandler,
+	uploadHandler *handlers.UploadHandler,
 	authHandler *handlers.AuthHandler,
 ) *AllHandlers {
 	return &AllHandlers{
@@ -288,6 +298,7 @@ func NewAllHandlers(
 		DudasHandler:                          dudasHandler,
 		VisitaDetalleEstudiantesUniversitariosHandler: visitaDetalleEstudiantesUniversitariosHandler,
 		NoticiaHandler: noticiaHandler,
+		UploadHandler:  uploadHandler,
 		AuthHandler:    authHandler,
 	}
 }
