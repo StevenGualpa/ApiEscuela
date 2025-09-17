@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -10,20 +11,22 @@ import (
 
 // JWTClaims representa las claims del JWT
 type JWTClaims struct {
-	UserID   uint   `json:"user_id"`
-	Username string `json:"username"`
-	TipoUsuarioID uint `json:"tipo_usuario_id"`
+	UserID        uint   `json:"user_id"`
+	Username      string `json:"username"`
+	TipoUsuarioID uint   `json:"tipo_usuario_id"`
 	jwt.RegisteredClaims
 }
 
 // JWTSecret es la clave secreta para firmar los tokens (en producción debe estar en variables de entorno)
 var JWTSecret = []byte("tu_clave_secreta_super_segura_aqui_cambiar_en_produccion")
 
+const loginRedirectPath = "/auth/login"
+
 // GenerateJWT genera un nuevo token JWT
 func GenerateJWT(userID uint, username string, tipoUsuarioID uint) (string, error) {
 	claims := JWTClaims{
-		UserID:   userID,
-		Username: username,
+		UserID:        userID,
+		Username:      username,
 		TipoUsuarioID: tipoUsuarioID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // Token válido por 24 horas
@@ -57,13 +60,14 @@ func ValidateJWT(tokenString string) (*JWTClaims, error) {
 
 // ErrorResponse representa la estructura estándar de errores
 type ErrorResponse struct {
-	Error       string `json:"error"`
-	ErrorCode   string `json:"error_code"`
-	Message     string `json:"message"`
-	StatusCode  int    `json:"status_code"`
-	Timestamp   string `json:"timestamp"`
-	Path        string `json:"path"`
-	Method      string `json:"method"`
+	Error      string `json:"error"`
+	ErrorCode  string `json:"error_code"`
+	Message    string `json:"message"`
+	StatusCode int    `json:"status_code"`
+	Timestamp  string `json:"timestamp"`
+	Path       string `json:"path"`
+	Method     string `json:"method"`
+	RedirectTo string `json:"redirect_to,omitempty"`
 }
 
 // JWTMiddleware es el middleware que protege las rutas
@@ -73,13 +77,13 @@ func JWTMiddleware() fiber.Handler {
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
-				Error:       "No autorizado",
-				ErrorCode:   "AUTH_TOKEN_MISSING",
-				Message:     "Token de autorización requerido. Incluya el header: Authorization: Bearer <token>",
-				StatusCode:  401,
-				Timestamp:   time.Now().Format(time.RFC3339),
-				Path:        c.Path(),
-				Method:      c.Method(),
+				Error:      "No autorizado",
+				ErrorCode:  "AUTH_TOKEN_MISSING",
+				Message:    "Token de autorización requerido. Incluya el header: Authorization: Bearer <token>",
+				StatusCode: 401,
+				Timestamp:  time.Now().Format(time.RFC3339),
+				Path:       c.Path(),
+				Method:     c.Method(),
 			})
 		}
 
@@ -87,38 +91,38 @@ func JWTMiddleware() fiber.Handler {
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 {
 			return c.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
-				Error:       "Formato de token inválido",
-				ErrorCode:   "AUTH_TOKEN_FORMAT_INVALID",
-				Message:     "El header Authorization debe tener el formato: Bearer <token>",
-				StatusCode:  401,
-				Timestamp:   time.Now().Format(time.RFC3339),
-				Path:        c.Path(),
-				Method:      c.Method(),
+				Error:      "Formato de token inválido",
+				ErrorCode:  "AUTH_TOKEN_FORMAT_INVALID",
+				Message:    "El header Authorization debe tener el formato: Bearer <token>",
+				StatusCode: 401,
+				Timestamp:  time.Now().Format(time.RFC3339),
+				Path:       c.Path(),
+				Method:     c.Method(),
 			})
 		}
 
 		if tokenParts[0] != "Bearer" {
 			return c.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
-				Error:       "Tipo de token inválido",
-				ErrorCode:   "AUTH_TOKEN_TYPE_INVALID",
-				Message:     "El token debe ser de tipo Bearer. Use: Authorization: Bearer <token>",
-				StatusCode:  401,
-				Timestamp:   time.Now().Format(time.RFC3339),
-				Path:        c.Path(),
-				Method:      c.Method(),
+				Error:      "Tipo de token inválido",
+				ErrorCode:  "AUTH_TOKEN_TYPE_INVALID",
+				Message:    "El token debe ser de tipo Bearer. Use: Authorization: Bearer <token>",
+				StatusCode: 401,
+				Timestamp:  time.Now().Format(time.RFC3339),
+				Path:       c.Path(),
+				Method:     c.Method(),
 			})
 		}
 
 		tokenString := tokenParts[1]
 		if tokenString == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
-				Error:       "Token vacío",
-				ErrorCode:   "AUTH_TOKEN_EMPTY",
-				Message:     "El token no puede estar vacío. Proporcione un token válido después de Bearer",
-				StatusCode:  401,
-				Timestamp:   time.Now().Format(time.RFC3339),
-				Path:        c.Path(),
-				Method:      c.Method(),
+				Error:      "Token vacío",
+				ErrorCode:  "AUTH_TOKEN_EMPTY",
+				Message:    "El token no puede estar vacío. Proporcione un token válido después de Bearer",
+				StatusCode: 401,
+				Timestamp:  time.Now().Format(time.RFC3339),
+				Path:       c.Path(),
+				Method:     c.Method(),
 			})
 		}
 
@@ -126,12 +130,20 @@ func JWTMiddleware() fiber.Handler {
 		claims, err := ValidateJWT(tokenString)
 		if err != nil {
 			// Determinar el tipo específico de error JWT
-			var errorCode, message string
-			
-			if err.Error() == "token is expired" {
+			var (
+				errorCode  string
+				message    string
+				redirectTo string
+			)
+
+			if errors.Is(err, jwt.ErrTokenExpired) || strings.Contains(err.Error(), "token is expired") {
 				errorCode = "AUTH_TOKEN_EXPIRED"
 				message = "El token ha expirado. Haga login nuevamente o use el endpoint /api/auth/refresh-token"
-			} else if err.Error() == "signature is invalid" {
+				redirectTo = loginRedirectPath
+				c.Set("Location", loginRedirectPath)
+				c.Set("X-Redirect-To", loginRedirectPath)
+				c.Set("WWW-Authenticate", "Bearer realm=\"ApiEscuela\", error=\"invalid_token\", error_description=\"The access token expired\"")
+			} else if errors.Is(err, jwt.ErrSignatureInvalid) || err.Error() == "signature is invalid" {
 				errorCode = "AUTH_TOKEN_SIGNATURE_INVALID"
 				message = "La firma del token es inválida. El token puede haber sido modificado"
 			} else if strings.Contains(err.Error(), "malformed") {
@@ -143,13 +155,14 @@ func JWTMiddleware() fiber.Handler {
 			}
 
 			return c.Status(fiber.StatusUnauthorized).JSON(ErrorResponse{
-				Error:       "Token inválido",
-				ErrorCode:   errorCode,
-				Message:     message,
-				StatusCode:  401,
-				Timestamp:   time.Now().Format(time.RFC3339),
-				Path:        c.Path(),
-				Method:      c.Method(),
+				Error:      "Token inválido",
+				ErrorCode:  errorCode,
+				Message:    message,
+				StatusCode: 401,
+				Timestamp:  time.Now().Format(time.RFC3339),
+				Path:       c.Path(),
+				Method:     c.Method(),
+				RedirectTo: redirectTo,
 			})
 		}
 
