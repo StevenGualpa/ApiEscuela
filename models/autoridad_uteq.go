@@ -12,5 +12,4 @@ type AutoridadUTEQ struct {
 	Persona                         Persona                          `json:"persona,omitempty" gorm:"foreignKey:PersonaID"`
 	DetalleAutoridadDetallesVisitas []DetalleAutoridadDetallesVisita `json:"detalle_autoridad_detalles_visitas,omitempty" gorm:"foreignKey:AutoridadUTEQID"`
 	Dudas                           []Dudas                          `json:"dudas,omitempty" gorm:"foreignKey:AutoridadUTEQID"`
-	Noticias                        []Noticia                        `json:"noticias,omitempty" gorm:"foreignKey:AutoridadUTEQID"`
 }

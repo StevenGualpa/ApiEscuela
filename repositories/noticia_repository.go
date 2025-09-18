@@ -22,7 +22,7 @@ func (r *NoticiaRepository) CreateNoticia(noticia *models.Noticia) error {
 // GetNoticiaByID obtiene una noticia por ID
 func (r *NoticiaRepository) GetNoticiaByID(id uint) (*models.Noticia, error) {
 	var noticia models.Noticia
-	err := r.db.Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
+	err := r.db.Preload("Usuario").Preload("Usuario.Persona").
 		First(&noticia, id).Error
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (r *NoticiaRepository) GetNoticiaByID(id uint) (*models.Noticia, error) {
 // GetAllNoticias obtiene todas las noticias
 func (r *NoticiaRepository) GetAllNoticias() ([]models.Noticia, error) {
 	var noticias []models.Noticia
-	err := r.db.Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
+	err := r.db.Preload("Usuario").Preload("Usuario.Persona").
 		Find(&noticias).Error
 	return noticias, err
 }
@@ -48,11 +48,11 @@ func (r *NoticiaRepository) DeleteNoticia(id uint) error {
 	return r.db.Delete(&models.Noticia{}, id).Error
 }
 
-// GetNoticiasByAutoridad obtiene noticias por autoridad UTEQ
-func (r *NoticiaRepository) GetNoticiasByAutoridad(autoridadID uint) ([]models.Noticia, error) {
+// GetNoticiasByUsuario obtiene noticias por usuario
+func (r *NoticiaRepository) GetNoticiasByUsuario(usuarioID uint) ([]models.Noticia, error) {
 	var noticias []models.Noticia
-	err := r.db.Where("autoridad_uteqid = ?", autoridadID).
-		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
+	err := r.db.Where("usuario_id = ?", usuarioID).
+		Preload("Usuario").Preload("Usuario.Persona").
 		Find(&noticias).Error
 	return noticias, err
 }
@@ -61,7 +61,7 @@ func (r *NoticiaRepository) GetNoticiasByAutoridad(autoridadID uint) ([]models.N
 func (r *NoticiaRepository) GetNoticiasByTitulo(titulo string) ([]models.Noticia, error) {
 	var noticias []models.Noticia
 	err := r.db.Where("titulo ILIKE ?", "%"+titulo+"%").
-		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
+		Preload("Usuario").Preload("Usuario.Persona").
 		Find(&noticias).Error
 	return noticias, err
 }
@@ -70,7 +70,7 @@ func (r *NoticiaRepository) GetNoticiasByTitulo(titulo string) ([]models.Noticia
 func (r *NoticiaRepository) GetNoticiasByDescripcion(descripcion string) ([]models.Noticia, error) {
 	var noticias []models.Noticia
 	err := r.db.Where("descripcion ILIKE ?", "%"+descripcion+"%").
-		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
+		Preload("Usuario").Preload("Usuario.Persona").
 		Find(&noticias).Error
 	return noticias, err
 }
@@ -79,7 +79,7 @@ func (r *NoticiaRepository) GetNoticiasByDescripcion(descripcion string) ([]mode
 func (r *NoticiaRepository) SearchNoticias(termino string) ([]models.Noticia, error) {
 	var noticias []models.Noticia
 	err := r.db.Where("titulo ILIKE ? OR descripcion ILIKE ?", "%"+termino+"%", "%"+termino+"%").
-		Preload("AutoridadUTEQ").Preload("AutoridadUTEQ.Persona").
+		Preload("Usuario").Preload("Usuario.Persona").
 		Find(&noticias).Error
 	return noticias, err
 }

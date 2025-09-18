@@ -117,16 +117,16 @@ func (h *NoticiaHandler) DeleteNoticia(c *fiber.Ctx) error {
 	})
 }
 
-// GetNoticiasByAutoridad obtiene noticias por autoridad UTEQ
-func (h *NoticiaHandler) GetNoticiasByAutoridad(c *fiber.Ctx) error {
-	autoridadID, err := strconv.Atoi(c.Params("autoridad_id"))
+// GetNoticiasByUsuario obtiene noticias por usuario
+func (h *NoticiaHandler) GetNoticiasByUsuario(c *fiber.Ctx) error {
+	usuarioID, err := strconv.Atoi(c.Params("usuario_id"))
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "ID de autoridad inválido",
+			"error": "ID de usuario inválido",
 		})
 	}
 
-	noticias, err := h.noticiaRepo.GetNoticiasByAutoridad(uint(autoridadID))
+	noticias, err := h.noticiaRepo.GetNoticiasByUsuario(uint(usuarioID))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "No se pueden obtener las noticias",

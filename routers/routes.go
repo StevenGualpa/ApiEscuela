@@ -19,15 +19,16 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	auth.Post("/verify-code", handlers.AuthHandler.VerifyCode)
 	auth.Post("/reset-password", handlers.AuthHandler.ResetPassword)
 
-	// ==================== UPLOAD DE ARCHIVOS (PÚBLICO) ====================
-	app.Post("/api/upload/", handlers.UploadHandler.UploadFile)
-
 	// ==================== SERVIR ARCHIVOS ESTÁTICOS (PÚBLICO) ====================
 	app.Get("/api/files/:tipo/:nombre", handlers.UploadHandler.GetFile)
 
 	// ==================== RUTAS PROTEGIDAS (CON AUTENTICACIÓN JWT) ====================
 	// Aplicar middleware JWT a todas las rutas protegidas
 	protected := app.Group("/api", middleware.JWTMiddleware())
+
+	// ==================== UPLOAD DE ARCHIVOS (PROTEGIDO) ====================
+	upload := protected.Group("/upload")
+	upload.Post("/", handlers.UploadHandler.UploadFile)
 
 	// Rutas de autenticación protegidas
 	authProtected := protected.Group("/auth")
@@ -228,7 +229,7 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	noticias.Get("/:id", handlers.NoticiaHandler.GetNoticia)
 	noticias.Put("/:id", handlers.NoticiaHandler.UpdateNoticia)
 	noticias.Delete("/:id", handlers.NoticiaHandler.DeleteNoticia)
-	noticias.Get("/autoridad/:autoridad_id", handlers.NoticiaHandler.GetNoticiasByAutoridad)
+	noticias.Get("/usuario/:usuario_id", handlers.NoticiaHandler.GetNoticiasByUsuario)
 	noticias.Get("/titulo/:titulo", handlers.NoticiaHandler.GetNoticiasByTitulo)
 	noticias.Get("/descripcion/:descripcion", handlers.NoticiaHandler.GetNoticiasByDescripcion)
 	noticias.Get("/buscar/:termino", handlers.NoticiaHandler.SearchNoticias)

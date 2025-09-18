@@ -27,7 +27,13 @@ func (h *UploadHandler) UploadFile(c *fiber.Ctx) error {
 		})
 	}
 
-	// Endpoint público - no requiere autenticación
+	// Verificar que el usuario esté autenticado
+	_, ok := c.Locals("userID").(uint)
+	if !ok {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Usuario no autenticado",
+		})
+	}
 
 	// Validar el archivo
 	if err := h.validarArchivo(file); err != nil {
