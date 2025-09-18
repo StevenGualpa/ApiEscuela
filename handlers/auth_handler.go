@@ -3,6 +3,7 @@ package handlers
 import (
 	"ApiEscuela/middleware"
 	"ApiEscuela/services"
+	"regexp"
 	"strings"
 	"time"
 
@@ -103,29 +104,60 @@ func (h *AuthHandler) VerifyCode(c *fiber.Ctx) error {
 	var req struct {
 		Codigo string `json:"codigo"`
 	}
+
+	// Parsear JSON
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se puede procesar el JSON"})
+		return SendError(c, 400, "invalid_json", "No se puede procesar el JSON. Verifique el formato de los datos", err.Error())
 	}
 
-	result, err := h.authService.VerifyCodigoWithDetails(req.Codigo)
+	// Validar que el código no esté vacío
+	if strings.TrimSpace(req.Codigo) == "" {
+		return SendValidationError(c, "El código es requerido", []ValidationError{
+			{
+				Field:   "codigo",
+				Message: "El código es requerido",
+				Value:   req.Codigo,
+			},
+		})
+	}
+
+	// Validar formato del código (6 dígitos numéricos)
+	codigoRegex := regexp.MustCompile(`^\d{6}$`)
+	if !codigoRegex.MatchString(strings.TrimSpace(req.Codigo)) {
+		return SendValidationError(c, "El formato del código no es válido", []ValidationError{
+			{
+				Field:   "codigo",
+				Message: "El código debe tener exactamente 6 dígitos numéricos",
+				Value:   req.Codigo,
+			},
+		})
+	}
+
+	// Verificar código usando el servicio
+	result, err := h.authService.VerifyCodigoWithDetails(strings.TrimSpace(req.Codigo))
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+		return SendError(c, 500, "service_error", "Error interno del servidor", "No se pudo verificar el código")
 	}
 
+	// Manejar diferentes estados del código
 	switch result.Estado {
 	case "no existe":
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"estado": "no existe"})
+		return SendError(c, 404, "codigo_not_found", "No se encontró el código", "Verifique que el código sea correcto")
+
 	case "caducado":
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"estado": "caducado"})
+		return SendError(c, 400, "codigo_expired", "El código ha expirado", "Solicite un nuevo código")
+
 	case "verificado":
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		return SendSuccess(c, 200, fiber.Map{
 			"estado":     "verificado",
 			"usuario_id": result.UsuarioID,
 			"cedula":     result.Cedula,
 			"codigo_id":  result.CodigoID,
+			"message":    "Código verificado exitosamente",
 		})
+
 	default:
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"estado": result.Estado})
+		return SendError(c, 400, "unknown_state", "Estado del código desconocido", "El código tiene un estado no válido")
 	}
 }
 
@@ -173,19 +205,104 @@ func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
 		UsuarioID uint   `json:"usuario_id"`
 		Clave     string `json:"clave"`
 	}
+
+	// Parsear JSON
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "No se puede procesar el JSON"})
+		return SendError(c, 400, "invalid_json", "No se puede procesar el JSON. Verifique el formato de los datos", err.Error())
 	}
-	if req.CodigoID == 0 || req.UsuarioID == 0 || strings.TrimSpace(req.Clave) == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "codigo_id, usuario_id y clave son requeridos"})
+
+	// Validar campos requeridos
+	var validationErrors []ValidationError
+
+	if req.CodigoID == 0 {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "codigo_id",
+			Message: "El ID del código es requerido",
+			Value:   "0",
+		})
 	}
-	if len(req.Clave) < 6 {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "La clave debe tener al menos 6 caracteres"})
+
+	if req.UsuarioID == 0 {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "usuario_id",
+			Message: "El ID del usuario es requerido",
+			Value:   "0",
+		})
 	}
-	if err := h.authService.ResetPasswordByCodigoID(req.CodigoID, req.UsuarioID, req.Clave); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+
+	if strings.TrimSpace(req.Clave) == "" {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "clave",
+			Message: "La nueva contraseña es requerida",
+			Value:   req.Clave,
+		})
+	} else if len(strings.TrimSpace(req.Clave)) < 6 {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "clave",
+			Message: "La contraseña debe tener al menos 6 caracteres",
+			Value:   req.Clave,
+		})
+	} else if len(strings.TrimSpace(req.Clave)) > 100 {
+		validationErrors = append(validationErrors, ValidationError{
+			Field:   "clave",
+			Message: "La contraseña no puede exceder 100 caracteres",
+			Value:   req.Clave,
+		})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "clave actualizada"})
+
+	// Validar fortaleza de la contraseña
+	if strings.TrimSpace(req.Clave) != "" {
+		// Verificar que no sea solo espacios
+		if strings.TrimSpace(req.Clave) != req.Clave {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   "clave",
+				Message: "La contraseña no puede comenzar o terminar con espacios",
+				Value:   req.Clave,
+			})
+		}
+
+		// Verificar que no contenga caracteres especiales problemáticos
+		if strings.Contains(req.Clave, " ") {
+			validationErrors = append(validationErrors, ValidationError{
+				Field:   "clave",
+				Message: "La contraseña no puede contener espacios",
+				Value:   req.Clave,
+			})
+		}
+	}
+
+	// Si hay errores de validación, retornarlos
+	if len(validationErrors) > 0 {
+		return SendValidationError(c, "Los datos proporcionados no son válidos", validationErrors)
+	}
+
+	// Limpiar datos
+	clave := strings.TrimSpace(req.Clave)
+
+	// Cambiar contraseña usando el servicio
+	if err := h.authService.ResetPasswordByCodigoID(req.CodigoID, req.UsuarioID, clave); err != nil {
+		// Manejar diferentes tipos de errores del servicio
+		switch err.Error() {
+		case "código no encontrado":
+			return SendError(c, 404, "codigo_not_found", "No se encontró el código", "Verifique que el ID del código sea correcto")
+		case "el código no pertenece al usuario especificado":
+			return SendError(c, 400, "codigo_user_mismatch", "El código no pertenece al usuario especificado", "Verifique que el código y usuario coincidan")
+		case "el código debe estar en estado válido para cambiar la contraseña":
+			return SendError(c, 400, "codigo_invalid_state", "El código debe estar en estado válido", "El código debe estar en estado 'valido' para cambiar la contraseña")
+		case "el código ha expirado":
+			return SendError(c, 400, "codigo_expired", "El código ha expirado", "Solicite un nuevo código")
+		case "error al actualizar la contraseña":
+			return SendError(c, 500, "password_update_error", "Error al actualizar la contraseña", "No se pudo cambiar la contraseña")
+		default:
+			return SendError(c, 500, "service_error", "Error interno del servidor", "No se pudo cambiar la contraseña")
+		}
+	}
+
+	return SendSuccess(c, 200, fiber.Map{
+		"message":    "Contraseña actualizada exitosamente",
+		"usuario_id": req.UsuarioID,
+		"codigo_id":  req.CodigoID,
+	})
 }
 
 func (h *AuthHandler) ChangePassword(c *fiber.Ctx) error {
