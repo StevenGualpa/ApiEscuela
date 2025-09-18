@@ -73,7 +73,19 @@ func main() {
 		log.Fatal("DATABASE_URL no está definida. Configure la variable de entorno DATABASE_URL en su archivo .env")
 	}
 
-	log.Printf("Usando DATABASE_URL para conexión a la base de datos")
+	// Debug: Mostrar la URL (sin la contraseña por seguridad)
+	debugURL := databaseURL
+	if len(debugURL) > 50 {
+		debugURL = debugURL[:50] + "..."
+	}
+	log.Printf("Usando DATABASE_URL para conexión a la base de datos: %s", debugURL)
+	
+	// Debug: Verificar otras variables de entorno
+	log.Printf("Debug - Variables de entorno:")
+	log.Printf("  DATABASE_URL length: %d", len(databaseURL))
+	log.Printf("  DB_HOST: %s", os.Getenv("DB_HOST"))
+	log.Printf("  DB_USER: %s", os.Getenv("DB_USER"))
+	log.Printf("  DB_NAME: %s", os.Getenv("DB_NAME"))
 
 	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
