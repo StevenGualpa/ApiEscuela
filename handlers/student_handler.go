@@ -40,15 +40,26 @@ func (h *EstudianteHandler) CreateEstudiante(c *fiber.Ctx) error {
 	// Limpiar datos
 	estudiante.Especialidad = strings.TrimSpace(estudiante.Especialidad)
 
+	// Verificar que los IDs sean válidos
+	if estudiante.PersonaID == 0 {
+		return SendError(c, 400, "persona_id_invalido", "El ID de la persona es requerido", "Proporcione un persona_id válido mayor que 0")
+	}
+	if estudiante.InstitucionID == 0 {
+		return SendError(c, 400, "institucion_id_invalido", "El ID de la institución es requerido", "Proporcione un institucion_id válido mayor que 0")
+	}
+	if estudiante.CiudadID == 0 {
+		return SendError(c, 400, "ciudad_id_invalido", "El ID de la ciudad es requerido", "Proporcione un ciudad_id válido mayor que 0")
+	}
+
 	// Verificar que las relaciones existen (validación de relaciones)
 	if !h.personaExists(estudiante.PersonaID) {
-		return SendError(c, 400, "persona_no_existe", "La persona especificada no existe", "Verifique que el persona_id sea correcto")
+		return SendError(c, 400, "persona_no_existe", "No se encontró la persona con el ID especificado", "Verifique que el persona_id sea correcto y que la persona exista en el sistema")
 	}
 	if !h.institucionExists(estudiante.InstitucionID) {
-		return SendError(c, 400, "institucion_no_existe", "La institución especificada no existe", "Verifique que el institucion_id sea correcto")
+		return SendError(c, 400, "institucion_no_existe", "No se encontró la institución con el ID especificado", "Verifique que el institucion_id sea correcto y que la institución exista en el sistema")
 	}
 	if !h.ciudadExists(estudiante.CiudadID) {
-		return SendError(c, 400, "ciudad_no_existe", "La ciudad especificada no existe", "Verifique que el ciudad_id sea correcto")
+		return SendError(c, 400, "ciudad_no_existe", "No se encontró la ciudad con el ID especificado", "Verifique que el ciudad_id sea correcto y que la ciudad exista en el sistema")
 	}
 
 	// Crear estudiante

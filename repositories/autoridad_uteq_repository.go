@@ -4,6 +4,7 @@ import (
 	"ApiEscuela/models"
 	"errors"
 	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -36,6 +37,15 @@ func NewAutoridadUTEQRepository(db *gorm.DB) *AutoridadUTEQRepository {
 
 // CreateAutoridadUTEQ crea una nueva autoridad UTEQ
 func (r *AutoridadUTEQRepository) CreateAutoridadUTEQ(autoridad *models.AutoridadUTEQ) error {
+	// Verificar que la persona existe
+	var personaCount int64
+	if err := r.db.Model(&models.Persona{}).Where("id = ?", autoridad.PersonaID).Count(&personaCount).Error; err != nil {
+		return err
+	}
+	if personaCount == 0 {
+		return errors.New("persona no encontrada")
+	}
+
 	// Prevalidar que no exista otra autoridad con la misma persona
 	var count int64
 	if err := r.db.Model(&models.AutoridadUTEQ{}).Where("persona_id = ?", autoridad.PersonaID).Count(&count).Error; err != nil {

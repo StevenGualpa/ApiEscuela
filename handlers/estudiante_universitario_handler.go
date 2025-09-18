@@ -35,9 +35,14 @@ func (h *EstudianteUniversitarioHandler) CreateEstudianteUniversitario(c *fiber.
 		return SendValidationError(c, "Los datos proporcionados no son válidos", validationErrors)
 	}
 
+	// Verificar que el PersonaID sea válido
+	if estudiante.PersonaID == 0 {
+		return SendError(c, 400, "persona_id_invalido", "El ID de la persona es requerido", "Proporcione un persona_id válido mayor que 0")
+	}
+
 	// Verificar que la persona existe (validación de relación)
 	if !h.personaExists(estudiante.PersonaID) {
-		return SendError(c, 400, "persona_no_existe", "La persona especificada no existe", "Verifique que el persona_id sea correcto")
+		return SendError(c, 400, "persona_no_existe", "No se encontró la persona con el ID especificado", "Verifique que el persona_id sea correcto y que la persona exista en el sistema")
 	}
 
 	// Verificar si la persona ya tiene un registro de estudiante universitario

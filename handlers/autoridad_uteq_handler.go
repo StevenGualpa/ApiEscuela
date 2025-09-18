@@ -40,9 +40,14 @@ func (h *AutoridadUTEQHandler) CreateAutoridadUTEQ(c *fiber.Ctx) error {
 	// Limpiar datos
 	autoridad.Cargo = strings.TrimSpace(autoridad.Cargo)
 
+	// Verificar que el PersonaID sea válido
+	if autoridad.PersonaID == 0 {
+		return SendError(c, 400, "persona_id_invalido", "El ID de la persona es requerido", "Proporcione un persona_id válido mayor que 0")
+	}
+
 	// Verificar que la persona existe (validación de relación)
 	if !h.personaExists(autoridad.PersonaID) {
-		return SendError(c, 400, "persona_no_existe", "La persona especificada no existe", "Verifique que el persona_id sea correcto")
+		return SendError(c, 400, "persona_no_existe", "No se encontró la persona con el ID especificado", "Verifique que el persona_id sea correcto y que la persona exista en el sistema")
 	}
 
 	// Verificar si la persona ya tiene un cargo asignado
@@ -52,7 +57,15 @@ func (h *AutoridadUTEQHandler) CreateAutoridadUTEQ(c *fiber.Ctx) error {
 
 	// Crear autoridad
 	if err := h.autoridadRepo.CreateAutoridadUTEQ(&autoridad); err != nil {
-		return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo crear la autoridad UTEQ")
+		// Manejar errores específicos del repositorio
+		switch err.Error() {
+		case "persona no encontrada":
+			return SendError(c, 400, "persona_no_existe", "No se encontró la persona con el ID especificado", "Verifique que el persona_id sea correcto y que la persona exista en el sistema")
+		case "autoridad ya existe":
+			return SendError(c, 409, "autoridad_duplicada", "La persona ya tiene un cargo asignado", "Una persona solo puede tener un cargo de autoridad")
+		default:
+			return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo crear la autoridad UTEQ")
+		}
 	}
 
 	return SendSuccess(c, 201, autoridad)
