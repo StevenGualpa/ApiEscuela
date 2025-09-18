@@ -3,6 +3,7 @@ package repositories
 import (
 	"ApiEscuela/models"
 	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -37,6 +38,21 @@ func (r *CodigoUsuarioRepository) ExisteVigentePorUsuario(usuarioID uint) (bool,
 func (r *CodigoUsuarioRepository) FindLatestByCodigo(codigo string) (*models.CodigoUsuario, error) {
 	var rec models.CodigoUsuario
 	err := r.db.Where("codigo = ?", codigo).Order("created_at DESC").First(&rec).Error
+	if err != nil {
+		return nil, err
+	}
+	return &rec, nil
+}
+
+// Update actualiza un registro de código de usuario
+func (r *CodigoUsuarioRepository) Update(rec *models.CodigoUsuario) error {
+	return r.db.Save(rec).Error
+}
+
+// GetByID obtiene un código por su ID
+func (r *CodigoUsuarioRepository) GetByID(id uint) (*models.CodigoUsuario, error) {
+	var rec models.CodigoUsuario
+	err := r.db.First(&rec, id).Error
 	if err != nil {
 		return nil, err
 	}

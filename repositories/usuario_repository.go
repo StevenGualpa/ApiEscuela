@@ -4,6 +4,7 @@ import (
 	"ApiEscuela/models"
 	"errors"
 	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -159,4 +160,9 @@ func (r *UsuarioRepository) GetUsuarioByUsernameIncludingDeleted(username string
 		return nil, err
 	}
 	return &usuario, nil
+}
+
+// UpdatePassword actualiza la contraseña de un usuario
+func (r *UsuarioRepository) UpdatePassword(usuarioID uint, nuevaClave string) error {
+	return r.db.Model(&models.Usuario{}).Where("id = ?", usuarioID).Update("contraseña", nuevaClave).Error
 }

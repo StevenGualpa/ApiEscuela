@@ -286,7 +286,7 @@ func (s *AuthService) sendEmail(to, subject, htmlBody string) error {
 
 	addr := host + ":" + port
 	auth := smtp.PlainAuth("", user, pass, host)
-	
+
 	fmt.Printf("DEBUG SMTP - Conectando a: %s\n", addr)
 
 	// Mensaje MIME
@@ -358,6 +358,14 @@ func (s *AuthService) ValidateToken(tokenString string) (bool, *middleware.JWTCl
 	return true, claims
 }
 
+// VerifyCodeResult contiene el resultado de la verificación de código
+type VerifyCodeResult struct {
+	Estado    string `json:"estado"`
+	UsuarioID uint   `json:"usuario_id"`
+	Cedula    string `json:"cedula"`
+	CodigoID  uint   `json:"codigo_id"`
+}
+
 // VerifyCodigo verifica un código: no existe | caducado | verificado
 func (s *AuthService) VerifyCodigo(codigo string) (string, uint, error) {
 	codigo = strings.TrimSpace(codigo)
@@ -371,5 +379,82 @@ func (s *AuthService) VerifyCodigo(codigo string) (string, uint, error) {
 	if time.Now().After(rec.ExpiraEn) {
 		return "caducado", 0, nil
 	}
+
+	// Marcar el código como expirado después de verificar
+	rec.ExpiraEn = time.Now().Add(-1 * time.Minute) // Hacer que expire inmediatamente
+	if err := s.codigoUsuarioRepo.Update(rec); err != nil {
+		fmt.Printf("DEBUG: Error al marcar código como expirado: %v\n", err)
+		// No retornar error, el código ya fue verificado
+	}
+
 	return "verificado", rec.UsuarioID, nil
+}
+
+// VerifyCodigoWithDetails verifica un código y retorna información completa
+func (s *AuthService) VerifyCodigoWithDetails(codigo string) (*VerifyCodeResult, error) {
+	codigo = strings.TrimSpace(codigo)
+	if codigo == "" {
+		return nil, errors.New("codigo requerido")
+	}
+
+	rec, err := s.codigoUsuarioRepo.FindLatestByCodigo(codigo)
+	if err != nil || rec == nil {
+		return &VerifyCodeResult{Estado: "no existe"}, nil
+	}
+
+	if time.Now().After(rec.ExpiraEn) {
+		return &VerifyCodeResult{Estado: "caducado"}, nil
+	}
+
+	// Obtener la cédula del usuario
+	usuario, err := s.usuarioRepo.GetUsuarioByID(rec.UsuarioID)
+	if err != nil || usuario == nil {
+		return &VerifyCodeResult{Estado: "no existe"}, nil
+	}
+
+	// Obtener la cédula de la persona
+	persona, err := s.personaRepo.GetPersonaByID(usuario.PersonaID)
+	if err != nil || persona == nil {
+		return &VerifyCodeResult{Estado: "no existe"}, nil
+	}
+
+	return &VerifyCodeResult{
+		Estado:    "verificado",
+		UsuarioID: rec.UsuarioID,
+		Cedula:    persona.Cedula,
+		CodigoID:  rec.ID,
+	}, nil
+}
+
+// ResetPasswordByCodigoID resetea la contraseña usando el ID del código y marca el código como usado
+func (s *AuthService) ResetPasswordByCodigoID(codigoID uint, usuarioID uint, nuevaClave string) error {
+	// Obtener el código por ID
+	rec, err := s.codigoUsuarioRepo.GetByID(codigoID)
+	if err != nil || rec == nil {
+		return errors.New("código no encontrado")
+	}
+
+	// Verificar que el código pertenece al usuario correcto
+	if rec.UsuarioID != usuarioID {
+		return errors.New("el código no pertenece al usuario especificado")
+	}
+
+	// Verificar que el código no esté expirado
+	if time.Now().After(rec.ExpiraEn) {
+		return errors.New("el código ha expirado")
+	}
+
+	// Cambiar la contraseña del usuario
+	if err := s.usuarioRepo.UpdatePassword(usuarioID, nuevaClave); err != nil {
+		return fmt.Errorf("error al actualizar la contraseña: %v", err)
+	}
+
+	// Marcar el código como usado (expirar inmediatamente)
+	rec.ExpiraEn = time.Now().Add(-1 * time.Minute)
+	if err := s.codigoUsuarioRepo.Update(rec); err != nil {
+		fmt.Printf("DEBUG: Error al marcar código como usado: %v\n", err)
+		// No retornar error, la contraseña ya fue cambiada
+	}
+
+	return nil
 }
