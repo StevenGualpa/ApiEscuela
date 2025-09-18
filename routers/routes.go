@@ -243,6 +243,16 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	noticias.Get("/descripcion/:descripcion", handlers.NoticiaHandler.GetNoticiasByDescripcion)
 	noticias.Get("/buscar/:termino", handlers.NoticiaHandler.SearchNoticias)
 
+	// ==================== CÓDIGOS ====================
+	codigos := protected.Group("/codigos")
+	codigos.Post("/", handlers.CodigoHandler.CreateCodigo)
+	codigos.Get("/:id", handlers.CodigoHandler.GetCodigo)
+	codigos.Put("/:id", handlers.CodigoHandler.UpdateCodigo)
+	codigos.Delete("/:id", handlers.CodigoHandler.DeleteCodigo)
+	codigos.Post("/verify", handlers.CodigoHandler.VerifyCodigo)
+	codigos.Put("/:id/verificar", handlers.CodigoHandler.MarcarComoVerificado)
+	codigos.Put("/:id/expirado", handlers.CodigoHandler.MarcarComoExpirado)
+
 }
 
 // AllHandlers contiene todos los handlers de la aplicación
@@ -266,6 +276,7 @@ type AllHandlers struct {
 	NoticiaHandler                                *handlers.NoticiaHandler
 	UploadHandler                                 *handlers.UploadHandler
 	AuthHandler                                   *handlers.AuthHandler
+	CodigoHandler                                 *handlers.CodigoHandler
 }
 
 // NewAllHandlers crea una instancia con todos los handlers
@@ -289,6 +300,7 @@ func NewAllHandlers(
 	noticiaHandler *handlers.NoticiaHandler,
 	uploadHandler *handlers.UploadHandler,
 	authHandler *handlers.AuthHandler,
+	codigoHandler *handlers.CodigoHandler,
 ) *AllHandlers {
 	return &AllHandlers{
 		EstudianteHandler:                     estudianteHandler,
@@ -310,5 +322,6 @@ func NewAllHandlers(
 		NoticiaHandler: noticiaHandler,
 		UploadHandler:  uploadHandler,
 		AuthHandler:    authHandler,
+		CodigoHandler:  codigoHandler,
 	}
 }

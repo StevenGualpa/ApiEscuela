@@ -134,14 +134,14 @@ func main() {
 	dudasRepo := repositories.NewDudasRepository(db)
 	visitaDetalleEstudiantesUniversitariosRepo := repositories.NewVisitaDetalleEstudiantesUniversitariosRepository(db)
 	codigoUsuarioRepo := repositories.NewCodigoUsuarioRepository(db)
-	
+
 	// Ejecutar migración manual para la tabla de códigos
 	if err := codigoUsuarioRepo.MigrarColumnaExpiraEn(); err != nil {
 		log.Printf("Advertencia: Error al migrar tabla de códigos: %v", err)
 	} else {
 		log.Printf("Migración de tabla de códigos completada exitosamente")
 	}
-	
+
 	noticiaRepo := repositories.NewNoticiaRepository(db)
 
 	// Inicializar handlers
@@ -163,6 +163,7 @@ func main() {
 	visitaDetalleEstudiantesUniversitariosHandler := handlers.NewVisitaDetalleEstudiantesUniversitariosHandler(visitaDetalleEstudiantesUniversitariosRepo)
 	noticiaHandler := handlers.NewNoticiaHandler(noticiaRepo)
 	uploadHandler := handlers.NewUploadHandler()
+	codigoHandler := handlers.NewCodigoHandler(codigoUsuarioRepo)
 
 	// Inicializar servicios
 	authService := services.NewAuthService(usuarioRepo, personaRepo, codigoUsuarioRepo)
@@ -191,6 +192,7 @@ func main() {
 		noticiaHandler,
 		uploadHandler,
 		authHandler,
+		codigoHandler,
 	)
 
 	// Configurar todas las rutas
