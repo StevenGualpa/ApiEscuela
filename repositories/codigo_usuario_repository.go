@@ -7,6 +7,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// Estados de códigos
+const (
+	EstadoValido     = "valido"
+	EstadoVerificado = "verificado"
+	EstadoExpirado   = "expirado"
+)
+
 type CodigoUsuarioRepository struct {
 	db *gorm.DB
 }
@@ -22,15 +29,16 @@ func (r *CodigoUsuarioRepository) Crear(usuarioID uint, codigo string) error {
 		UsuarioID: usuarioID,
 		Codigo:    codigo,
 		ExpiraEn:  &expiraEn,
+		Estado:    EstadoValido,
 	}
 	return r.db.Create(record).Error
 }
 
-// ExisteVigentePorUsuario verifica si el usuario tiene un código no expirado
+// ExisteVigentePorUsuario verifica si el usuario tiene un código válido y no expirado
 func (r *CodigoUsuarioRepository) ExisteVigentePorUsuario(usuarioID uint) (bool, error) {
 	var count int64
 	err := r.db.Model(&models.CodigoUsuario{}).
-		Where("usuario_id = ? AND expira_en IS NOT NULL AND expira_en > ?", usuarioID, time.Now()).
+		Where("usuario_id = ? AND estado = ? AND expira_en IS NOT NULL AND expira_en > ?", usuarioID, EstadoValido, time.Now()).
 		Count(&count).Error
 	return count > 0, err
 }
@@ -60,7 +68,23 @@ func (r *CodigoUsuarioRepository) GetByID(id uint) (*models.CodigoUsuario, error
 	return &rec, nil
 }
 
-// MarcarComoUsado marca un código como usado poniendo ExpiraEn en NULL
-func (r *CodigoUsuarioRepository) MarcarComoUsado(id uint) error {
-	return r.db.Model(&models.CodigoUsuario{}).Where("id = ?", id).Update("expira_en", nil).Error
+// MarcarComoVerificado marca un código como verificado
+func (r *CodigoUsuarioRepository) MarcarComoVerificado(id uint) error {
+	return r.db.Model(&models.CodigoUsuario{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"estado":    EstadoVerificado,
+		"expira_en": nil,
+	}).Error
+}
+
+// MarcarComoExpirado marca un código como expirado
+func (r *CodigoUsuarioRepository) MarcarComoExpirado(id uint) error {
+	return r.db.Model(&models.CodigoUsuario{}).Where("id = ?", id).Update("estado", EstadoExpirado).Error
+}
+
+// GetCodigosValidosExpirados obtiene códigos que están en estado válido pero ya expiraron por tiempo
+func (r *CodigoUsuarioRepository) GetCodigosValidosExpirados(usuarioID uint) ([]models.CodigoUsuario, error) {
+	var codigos []models.CodigoUsuario
+	err := r.db.Where("usuario_id = ? AND estado = ? AND expira_en IS NOT NULL AND expira_en <= ?",
+		usuarioID, EstadoValido, time.Now()).Find(&codigos).Error
+	return codigos, err
 }

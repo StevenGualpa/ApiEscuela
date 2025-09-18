@@ -229,8 +229,22 @@ func (s *AuthService) RecoverPassword(cedula string) error {
 		}
 	}
 
-	// Verificar si ya existe un código vigente para alguno de los usuarios
+	// Verificar y limpiar códigos expirados para cada usuario
 	for _, u := range usuarios {
+		// Buscar códigos válidos pero expirados por tiempo
+		codigosExpirados, err := s.codigoUsuarioRepo.GetCodigosValidosExpirados(u.ID)
+		if err != nil {
+			return errors.New("error al verificar códigos existentes")
+		}
+
+		// Marcar códigos expirados como expirado
+		for _, codigo := range codigosExpirados {
+			if err := s.codigoUsuarioRepo.MarcarComoExpirado(codigo.ID); err != nil {
+				fmt.Printf("DEBUG: Error al marcar código como expirado: %v\n", err)
+			}
+		}
+
+		// Verificar si aún existe un código vigente después de limpiar
 		vigente, err := s.codigoUsuarioRepo.ExisteVigentePorUsuario(u.ID)
 		if err != nil {
 			return errors.New("error al verificar códigos existentes")
@@ -376,15 +390,18 @@ func (s *AuthService) VerifyCodigo(codigo string) (string, uint, error) {
 	if err != nil || rec == nil {
 		return "no existe", 0, nil
 	}
-	if rec.ExpiraEn == nil || time.Now().After(*rec.ExpiraEn) {
+	// Verificar estado del código
+	if rec.Estado != "valido" {
 		return "caducado", 0, nil
 	}
 
-	// Marcar el código como usado después de verificar
-	if err := s.codigoUsuarioRepo.MarcarComoUsado(rec.ID); err != nil {
-		fmt.Printf("DEBUG: Error al marcar código como usado: %v\n", err)
-		// No retornar error, el código ya fue verificado
+	if rec.ExpiraEn == nil || time.Now().After(*rec.ExpiraEn) {
+		// Marcar como expirado si ya pasó el tiempo
+		s.codigoUsuarioRepo.MarcarComoExpirado(rec.ID)
+		return "caducado", 0, nil
 	}
+
+	// No cambiar el estado en la verificación, solo validar
 
 	return "verificado", rec.UsuarioID, nil
 }
@@ -401,7 +418,14 @@ func (s *AuthService) VerifyCodigoWithDetails(codigo string) (*VerifyCodeResult,
 		return &VerifyCodeResult{Estado: "no existe"}, nil
 	}
 
+	// Verificar estado del código
+	if rec.Estado != "valido" {
+		return &VerifyCodeResult{Estado: "caducado"}, nil
+	}
+
 	if rec.ExpiraEn == nil || time.Now().After(*rec.ExpiraEn) {
+		// Marcar como expirado si ya pasó el tiempo
+		s.codigoUsuarioRepo.MarcarComoExpirado(rec.ID)
 		return &VerifyCodeResult{Estado: "caducado"}, nil
 	}
 
@@ -438,8 +462,15 @@ func (s *AuthService) ResetPasswordByCodigoID(codigoID uint, usuarioID uint, nue
 		return errors.New("el código no pertenece al usuario especificado")
 	}
 
+	// Verificar estado del código
+	if rec.Estado != "valido" {
+		return errors.New("el código debe estar en estado válido para cambiar la contraseña")
+	}
+
 	// Verificar que el código no esté expirado
 	if rec.ExpiraEn == nil || time.Now().After(*rec.ExpiraEn) {
+		// Marcar como expirado si ya pasó el tiempo
+		s.codigoUsuarioRepo.MarcarComoExpirado(codigoID)
 		return errors.New("el código ha expirado")
 	}
 
@@ -448,9 +479,9 @@ func (s *AuthService) ResetPasswordByCodigoID(codigoID uint, usuarioID uint, nue
 		return fmt.Errorf("error al actualizar la contraseña: %v", err)
 	}
 
-	// Marcar el código como usado (poner ExpiraEn en NULL)
-	if err := s.codigoUsuarioRepo.MarcarComoUsado(codigoID); err != nil {
-		fmt.Printf("DEBUG: Error al marcar código como usado: %v\n", err)
+	// Marcar el código como verificado después de cambiar la contraseña
+	if err := s.codigoUsuarioRepo.MarcarComoVerificado(codigoID); err != nil {
+		fmt.Printf("DEBUG: Error al marcar código como verificado: %v\n", err)
 		// No retornar error, la contraseña ya fue cambiada
 	}
 
