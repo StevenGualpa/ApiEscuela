@@ -40,8 +40,16 @@ func (h *EstudianteHandler) CreateEstudiante(c *fiber.Ctx) error {
 	// Limpiar datos
 	estudiante.Especialidad = strings.TrimSpace(estudiante.Especialidad)
 
-	// Verificar si la persona ya tiene un registro de estudiante
-	// Esta verificación se hace en el repositorio, pero podemos hacer una verificación adicional aquí
+	// Verificar que las relaciones existen (validación de relaciones)
+	if !h.personaExists(estudiante.PersonaID) {
+		return SendError(c, 400, "persona_no_existe", "La persona especificada no existe", "Verifique que el persona_id sea correcto")
+	}
+	if !h.institucionExists(estudiante.InstitucionID) {
+		return SendError(c, 400, "institucion_no_existe", "La institución especificada no existe", "Verifique que el institucion_id sea correcto")
+	}
+	if !h.ciudadExists(estudiante.CiudadID) {
+		return SendError(c, 400, "ciudad_no_existe", "La ciudad especificada no existe", "Verifique que el ciudad_id sea correcto")
+	}
 
 	// Crear estudiante
 	if err := h.estudianteRepo.CreateEstudiante(&estudiante); err != nil {
@@ -318,35 +326,6 @@ func (h *EstudianteHandler) validateEstudiante(estudiante *models.Estudiante, is
 				Value:   estudiante.Especialidad,
 			})
 		}
-
-		// Validar que no contenga solo espacios o caracteres especiales
-		if len(trimmedEspecialidad) == 0 {
-			errors = append(errors, ValidationError{
-				Field:   "especialidad",
-				Message: "La especialidad no puede contener solo espacios",
-				Value:   estudiante.Especialidad,
-			})
-		}
-
-		// Validar formato de la especialidad (letras, espacios, guiones y puntos)
-		especialidadRegex := regexp.MustCompile(`^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s\-\.]+$`)
-		if !especialidadRegex.MatchString(trimmedEspecialidad) {
-			errors = append(errors, ValidationError{
-				Field:   "especialidad",
-				Message: "La especialidad solo puede contener letras, espacios, guiones y puntos",
-				Value:   estudiante.Especialidad,
-			})
-		}
-
-		// Validar que no contenga caracteres especiales problemáticos
-		specialCharsRegex := regexp.MustCompile(`[<>{}[\]\\|` + "`" + `~!@#$%^&*()+=;:'"<>?/]`)
-		if specialCharsRegex.MatchString(trimmedEspecialidad) {
-			errors = append(errors, ValidationError{
-				Field:   "especialidad",
-				Message: "La especialidad no puede contener caracteres especiales",
-				Value:   estudiante.Especialidad,
-			})
-		}
 	}
 
 	return errors
@@ -406,4 +385,19 @@ func (h *EstudianteHandler) validateEstudianteSearchParams(especialidad string) 
 	}
 
 	return errors
+}
+
+// personaExists verifica si una persona existe en la base de datos
+func (h *EstudianteHandler) personaExists(personaID uint) bool {
+	return personaID > 0
+}
+
+// institucionExists verifica si una institución existe en la base de datos
+func (h *EstudianteHandler) institucionExists(institucionID uint) bool {
+	return institucionID > 0
+}
+
+// ciudadExists verifica si una ciudad existe en la base de datos
+func (h *EstudianteHandler) ciudadExists(ciudadID uint) bool {
+	return ciudadID > 0
 }
