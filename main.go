@@ -67,21 +67,15 @@ func main() {
 	}
 
 	// Configurar conexión a la base de datos
-	var dsn string
-
-	// Intentar usar DATABASE_URL primero (para producción/Neon)
-	if databaseURL := os.Getenv("DATABASE_URL"); databaseURL != "" {
-		dsn = databaseURL
-		log.Printf("Usando DATABASE_URL (Neon) para conexión a la base de datos")
-	} else {
-		// Fallback a la configuración Neon por defecto
-		// Configuración anterior (UTEQ) comentada:
-		// dsn = "host=aplicaciones.uteq.edu.ec user=aplicaciones password=z8E9bYdQpHmOvtfH6Up5dE1HKCh35pgwlEDuZqMklOtg3Zm2UA dbname=bdrealidaduteq port=9010 sslmode=require"
-		dsn = "postgresql://neondb_owner:npg_UkVLzt5h0Zyx@ep-noisy-heart-aehgd4hl-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-		log.Printf("Usando configuración Neon por defecto para conexión a la base de datos")
+	// Obtener configuración de base de datos desde variables de entorno
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		log.Fatal("DATABASE_URL no está definida. Configure la variable de entorno DATABASE_URL en su archivo .env")
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	log.Printf("Usando DATABASE_URL para conexión a la base de datos")
+
+	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Error al conectar con la base de datos: %v", err)
 	}

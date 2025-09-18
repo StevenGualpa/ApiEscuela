@@ -645,7 +645,7 @@ UPLOAD_ALLOWED_TYPES=jpg,jpeg,png,gif,mp4,avi,mov,pdf,doc,docx,txt
 
 1. **Crear archivo `.env`** con valores reales:
    ```bash
-   cp env.example .env
+   # El archivo .env ya existe, solo edítalo con tus valores reales
    nano .env  # Editar con tus valores
    ```
 
@@ -655,14 +655,21 @@ UPLOAD_ALLOWED_TYPES=jpg,jpeg,png,gif,mp4,avi,mov,pdf,doc,docx,txt
    - Usar la contraseña de aplicación en `SMTP_PASS`
 
 3. **Configurar base de datos**:
-   - Para Neon/Heroku: usar `DATABASE_URL`
-   - Para local: usar `DB_HOST`, `DB_USER`, etc.
+   - **OBLIGATORIO**: Configurar `DATABASE_URL` en `.env`
+   - La aplicación NO funcionará sin esta variable
 
 4. **Generar JWT Secret seguro**:
    ```bash
    # Generar clave aleatoria de 32 caracteres
    openssl rand -hex 32
    ```
+
+### ⚠️ Importante - Seguridad
+
+- ✅ **Todas las credenciales** están en `.env` (protegido por Git)
+- ✅ **NO hay credenciales hardcodeadas** en el código
+- ✅ **La aplicación falla** si faltan variables de entorno
+- ✅ **Configuración obligatoria** antes de ejecutar
 
 ### Seguridad
 

@@ -7,8 +7,8 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	mrand "math/rand"
 	"math/big"
+	mrand "math/rand"
 	"net/smtp"
 	"os"
 	"strings"
@@ -42,10 +42,10 @@ type LoginRequest struct {
 
 // LoginResponse representa la respuesta del login
 type LoginResponse struct {
-	Token   string        `json:"token"`
-	Usuario *models.Usuario `json:"usuario"`
-	Message string        `json:"message"`
-	RequiereCambioPassword bool `json:"requiere_cambio_password"`
+	Token                  string          `json:"token"`
+	Usuario                *models.Usuario `json:"usuario"`
+	Message                string          `json:"message"`
+	RequiereCambioPassword bool            `json:"requiere_cambio_password"`
 }
 
 // RegisterRequest representa la estructura de datos para el registro
@@ -267,21 +267,18 @@ func (s *AuthService) RecoverPassword(cedula string) error {
 
 // sendEmail envía un correo usando SMTP con contenido HTML básico
 func (s *AuthService) sendEmail(to, subject, htmlBody string) error {
-	// Valores por defecto para entorno de pruebas (Gmail con App Password)
-	host := "smtp.gmail.com"
-	port := "587"
-	user := "bfpaquete0045@gmail.com"
-	pass := "ublqnzypqcbhxhqg" // Contraseña de aplicación (sin espacios)
-	from := "bfpaquete0045@gmail.com"
-	fromName := "ApiEscuela"
+	// Obtener configuración SMTP desde variables de entorno
+	host := os.Getenv("SMTP_HOST")
+	port := os.Getenv("SMTP_PORT")
+	user := os.Getenv("SMTP_USER")
+	pass := os.Getenv("SMTP_PASS")
+	from := os.Getenv("SMTP_FROM")
+	fromName := os.Getenv("SMTP_FROM_NAME")
 
-	// Permitir sobreescribir con variables de entorno si están definidas (producción)
-	if v := os.Getenv("SMTP_HOST"); v != "" { host = v }
-	if v := os.Getenv("SMTP_PORT"); v != "" { port = v }
-	if v := os.Getenv("SMTP_USER"); v != "" { user = v }
-	if v := os.Getenv("SMTP_PASS"); v != "" { pass = v }
-	if v := os.Getenv("SMTP_FROM"); v != "" { from = v }
-	if v := os.Getenv("SMTP_FROM_NAME"); v != "" { fromName = v }
+	// Verificar que todas las variables estén definidas
+	if host == "" || port == "" || user == "" || pass == "" || from == "" || fromName == "" {
+		return fmt.Errorf("configuración SMTP incompleta. Verifique las variables de entorno: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, SMTP_FROM_NAME")
+	}
 
 	addr := host + ":" + port
 	auth := smtp.PlainAuth("", user, pass, host)
