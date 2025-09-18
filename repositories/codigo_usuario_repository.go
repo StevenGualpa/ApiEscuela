@@ -84,7 +84,27 @@ func (r *CodigoUsuarioRepository) MarcarComoExpirado(id uint) error {
 // GetCodigosValidosExpirados obtiene códigos que están en estado válido pero ya expiraron por tiempo
 func (r *CodigoUsuarioRepository) GetCodigosValidosExpirados(usuarioID uint) ([]models.CodigoUsuario, error) {
 	var codigos []models.CodigoUsuario
-	err := r.db.Where("usuario_id = ? AND estado = ? AND expira_en IS NOT NULL AND expira_en <= ?",
+	err := r.db.Where("usuario_id = ? AND estado = ? AND expira_en IS NOT NULL AND expira_en <= ?", 
 		usuarioID, EstadoValido, time.Now()).Find(&codigos).Error
 	return codigos, err
+}
+
+// MigrarColumnaExpiraEn permite valores NULL en la columna expira_en
+func (r *CodigoUsuarioRepository) MigrarColumnaExpiraEn() error {
+	// Primero, agregar la columna estado si no existe
+	if err := r.db.Exec("ALTER TABLE codigosusuarios ADD COLUMN IF NOT EXISTS estado VARCHAR(20) DEFAULT 'valido'").Error; err != nil {
+		return err
+	}
+	
+	// Crear índice para estado si no existe
+	if err := r.db.Exec("CREATE INDEX IF NOT EXISTS idx_codigosusuarios_estado ON codigosusuarios(estado)").Error; err != nil {
+		return err
+	}
+	
+	// Modificar la columna expira_en para permitir NULL
+	if err := r.db.Exec("ALTER TABLE codigosusuarios ALTER COLUMN expira_en DROP NOT NULL").Error; err != nil {
+		return err
+	}
+	
+	return nil
 }
