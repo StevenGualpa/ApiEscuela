@@ -643,10 +643,24 @@ UPLOAD_ALLOWED_TYPES=jpg,jpeg,png,gif,mp4,avi,mov,pdf,doc,docx,txt
 
 ### Configuración para Producción
 
-1. **Crear archivo `.env`** con valores reales:
+#### **Para Render.com (Recomendado):**
+
+1. **Configurar variables de entorno en Render:**
+   - Ir a tu servicio en Render Dashboard
+   - Sección "Environment"
+   - Agregar las siguientes variables:
+
    ```bash
-   # El archivo .env ya existe, solo edítalo con tus valores reales
-   nano .env  # Editar con tus valores
+   DATABASE_URL=postgres://usuario:password@host:puerto/database?sslmode=require
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=tu_email@gmail.com
+   SMTP_PASS=tu_app_password
+   SMTP_FROM=tu_email@gmail.com
+   SMTP_FROM_NAME=ApiEscuela
+   JWT_SECRET=tu_clave_secreta_de_32_caracteres
+   APP_PORT=3000
+   APP_ENV=production
    ```
 
 2. **Configurar SMTP** (Gmail):
@@ -654,15 +668,21 @@ UPLOAD_ALLOWED_TYPES=jpg,jpeg,png,gif,mp4,avi,mov,pdf,doc,docx,txt
    - Generar contraseña de aplicación
    - Usar la contraseña de aplicación en `SMTP_PASS`
 
-3. **Configurar base de datos**:
-   - **OBLIGATORIO**: Configurar `DATABASE_URL` en `.env`
-   - La aplicación NO funcionará sin esta variable
-
-4. **Generar JWT Secret seguro**:
+3. **Generar JWT Secret seguro**:
    ```bash
    # Generar clave aleatoria de 32 caracteres
    openssl rand -hex 32
    ```
+
+#### **Para desarrollo local:**
+
+1. **Crear archivo `.env`** desde la plantilla:
+   ```bash
+   cp env.example .env
+   # Editar .env con tus valores reales
+   ```
+
+2. **Configurar las mismas variables** que en producción
 
 ### ⚠️ Importante - Seguridad
 

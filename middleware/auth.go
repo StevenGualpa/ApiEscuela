@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"os"
 	"strings"
 	"time"
 
@@ -17,8 +18,15 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
-// JWTSecret es la clave secreta para firmar los tokens (en producción debe estar en variables de entorno)
-var JWTSecret = []byte("tu_clave_secreta_super_segura_aqui_cambiar_en_produccion")
+// getJWTSecret obtiene la clave secreta desde variables de entorno
+func getJWTSecret() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		// Fallback para desarrollo (NO usar en producción)
+		return []byte("default_secret_for_development_only")
+	}
+	return []byte(secret)
+}
 
 const loginRedirectPath = "/auth/login"
 
@@ -38,13 +46,13 @@ func GenerateJWT(userID uint, username string, tipoUsuarioID uint) (string, erro
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(JWTSecret)
+	return token.SignedString(getJWTSecret())
 }
 
 // ValidateJWT valida un token JWT
 func ValidateJWT(tokenString string) (*JWTClaims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return JWTSecret, nil
+		return getJWTSecret(), nil
 	})
 
 	if err != nil {

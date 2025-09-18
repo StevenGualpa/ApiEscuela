@@ -18,10 +18,10 @@ import (
 )
 
 func main() {
-	// Cargar variables de entorno desde .env
+	// Cargar variables de entorno desde .env (opcional para desarrollo)
 	err := godotenv.Load()
 	if err != nil {
-		log.Printf("Advertencia: No se pudo cargar el archivo .env: %v", err)
+		log.Printf("Info: No se encontró archivo .env, usando variables de entorno del sistema")
 	}
 
 	// Inicializar Fiber

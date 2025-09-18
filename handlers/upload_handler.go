@@ -28,12 +28,16 @@ func (h *UploadHandler) UploadFile(c *fiber.Ctx) error {
 	}
 
 	// Verificar que el usuario esté autenticado
-	_, ok := c.Locals("userID").(uint)
+	userID, ok := c.Locals("user_id").(uint)
 	if !ok {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Usuario no autenticado",
+			"debug": "user_id no encontrado en locals",
 		})
 	}
+
+	// Debug: Log del userID obtenido
+	fmt.Printf("DEBUG: UserID obtenido del token: %d\n", userID)
 
 	// Validar el archivo
 	if err := h.validarArchivo(file); err != nil {

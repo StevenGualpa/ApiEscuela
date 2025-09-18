@@ -29,6 +29,15 @@ func SetupAllRoutes(app *fiber.App, handlers *AllHandlers) {
 	// ==================== UPLOAD DE ARCHIVOS (PROTEGIDO) ====================
 	upload := protected.Group("/upload")
 	upload.Post("/", handlers.UploadHandler.UploadFile)
+	upload.Get("/test", func(c *fiber.Ctx) error {
+		userID := c.Locals("user_id")
+		username := c.Locals("username")
+		return c.JSON(fiber.Map{
+			"message":  "Token válido",
+			"user_id":  userID,
+			"username": username,
+		})
+	})
 
 	// Rutas de autenticación protegidas
 	authProtected := protected.Group("/auth")
