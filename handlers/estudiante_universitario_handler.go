@@ -22,7 +22,7 @@ func (h *EstudianteUniversitarioHandler) CreateEstudianteUniversitario(c *fiber.
 
 	// Parsear JSON
 	if err := c.BodyParser(&estudiante); err != nil {
-		return SendError(c, 400, "invalid_json", "No se puede procesar el JSON. Verifique el formato de los datos", err.Error())
+		return SendError(c, 400, "json_invalido", "No se puede procesar el JSON. Verifique el formato de los datos", err.Error())
 	}
 
 	// Validar campos requeridos
@@ -35,14 +35,14 @@ func (h *EstudianteUniversitarioHandler) CreateEstudianteUniversitario(c *fiber.
 		return SendValidationError(c, "Los datos proporcionados no son válidos", validationErrors)
 	}
 
+	// Verificar si la persona ya tiene un registro de estudiante universitario
+	if existingEstudiante, _ := h.estudianteUnivRepo.GetEstudianteUniversitarioByPersona(estudiante.PersonaID); existingEstudiante != nil {
+		return SendError(c, 409, "estudiante_univ_duplicado", "La persona ya tiene un registro de estudiante universitario", "Una persona solo puede tener un registro de estudiante universitario")
+	}
+
 	// Crear estudiante universitario
 	if err := h.estudianteUnivRepo.CreateEstudianteUniversitario(&estudiante); err != nil {
-		switch err {
-		case repositories.ErrEstudianteUnivDuplicado:
-			return SendError(c, 409, "duplicate_estudiante_univ", "Ya existe un estudiante universitario con esta persona", "La persona ya tiene un registro de estudiante universitario")
-		default:
-			return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudo crear el estudiante universitario")
-		}
+		return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo crear el estudiante universitario")
 	}
 
 	return SendSuccess(c, 201, estudiante)
@@ -52,17 +52,17 @@ func (h *EstudianteUniversitarioHandler) CreateEstudianteUniversitario(c *fiber.
 func (h *EstudianteUniversitarioHandler) GetEstudianteUniversitario(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	if idStr == "" {
-		return SendError(c, 400, "missing_id", "El ID del estudiante universitario es requerido", "Proporcione un ID válido")
+		return SendError(c, 400, "id_faltante", "El ID del estudiante universitario es requerido", "Proporcione un ID válido")
 	}
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id <= 0 {
-		return SendError(c, 400, "invalid_id", "El ID del estudiante universitario no es válido", "El ID debe ser un número entero positivo")
+		return SendError(c, 400, "id_invalido", "El ID del estudiante universitario no es válido", "El ID debe ser un número entero positivo")
 	}
 
 	estudiante, err := h.estudianteUnivRepo.GetEstudianteUniversitarioByID(uint(id))
 	if err != nil {
-		return SendError(c, 404, "estudiante_univ_not_found", "No se encontró el estudiante universitario solicitado", "Verifique que el ID sea correcto")
+		return SendError(c, 404, "estudiante_univ_no_encontrado", "No se encontró el estudiante universitario solicitado", "Verifique que el ID sea correcto")
 	}
 
 	return SendSuccess(c, 200, estudiante)
@@ -72,7 +72,7 @@ func (h *EstudianteUniversitarioHandler) GetEstudianteUniversitario(c *fiber.Ctx
 func (h *EstudianteUniversitarioHandler) GetAllEstudiantesUniversitarios(c *fiber.Ctx) error {
 	estudiantes, err := h.estudianteUnivRepo.GetAllEstudiantesUniversitarios()
 	if err != nil {
-		return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudieron obtener los estudiantes universitarios")
+		return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudieron obtener los estudiantes universitarios")
 	}
 
 	return SendSuccess(c, 200, estudiantes)
@@ -82,29 +82,36 @@ func (h *EstudianteUniversitarioHandler) GetAllEstudiantesUniversitarios(c *fibe
 func (h *EstudianteUniversitarioHandler) UpdateEstudianteUniversitario(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	if idStr == "" {
-		return SendError(c, 400, "missing_id", "El ID del estudiante universitario es requerido", "Proporcione un ID válido")
+		return SendError(c, 400, "id_faltante", "El ID del estudiante universitario es requerido", "Proporcione un ID válido")
 	}
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id <= 0 {
-		return SendError(c, 400, "invalid_id", "El ID del estudiante universitario no es válido", "El ID debe ser un número entero positivo")
+		return SendError(c, 400, "id_invalido", "El ID del estudiante universitario no es válido", "El ID debe ser un número entero positivo")
 	}
 
 	// Verificar que el estudiante existe
 	existingEstudiante, err := h.estudianteUnivRepo.GetEstudianteUniversitarioByID(uint(id))
 	if err != nil {
-		return SendError(c, 404, "estudiante_univ_not_found", "No se encontró el estudiante universitario solicitado", "Verifique que el ID sea correcto")
+		return SendError(c, 404, "estudiante_univ_no_encontrado", "No se encontró el estudiante universitario solicitado", "Verifique que el ID sea correcto")
 	}
 
 	// Parsear datos de actualización
 	var updateData models.EstudianteUniversitario
 	if err := c.BodyParser(&updateData); err != nil {
-		return SendError(c, 400, "invalid_json", "No se puede procesar el JSON. Verifique el formato de los datos", err.Error())
+		return SendError(c, 400, "json_invalido", "No se puede procesar el JSON. Verifique el formato de los datos", err.Error())
 	}
 
 	// Validar datos de actualización
 	if validationErrors := h.validateEstudianteUniversitario(&updateData, true); len(validationErrors) > 0 {
 		return SendValidationError(c, "Los datos proporcionados no son válidos", validationErrors)
+	}
+
+	// Verificar si la nueva persona ya tiene un registro de estudiante universitario (si cambia la persona)
+	if updateData.PersonaID != existingEstudiante.PersonaID {
+		if existingEstudianteByPersona, _ := h.estudianteUnivRepo.GetEstudianteUniversitarioByPersona(updateData.PersonaID); existingEstudianteByPersona != nil {
+			return SendError(c, 409, "estudiante_univ_duplicado", "La persona ya tiene un registro de estudiante universitario", "Una persona solo puede tener un registro de estudiante universitario")
+		}
 	}
 
 	// Actualizar campos
@@ -113,12 +120,7 @@ func (h *EstudianteUniversitarioHandler) UpdateEstudianteUniversitario(c *fiber.
 
 	// Guardar cambios
 	if err := h.estudianteUnivRepo.UpdateEstudianteUniversitario(existingEstudiante); err != nil {
-		switch err {
-		case repositories.ErrEstudianteUnivDuplicado:
-			return SendError(c, 409, "duplicate_estudiante_univ", "Ya existe un estudiante universitario con esta persona", "La persona ya tiene un registro de estudiante universitario")
-		default:
-			return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudo actualizar el estudiante universitario")
-		}
+		return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo actualizar el estudiante universitario")
 	}
 
 	return SendSuccess(c, 200, existingEstudiante)
@@ -128,23 +130,28 @@ func (h *EstudianteUniversitarioHandler) UpdateEstudianteUniversitario(c *fiber.
 func (h *EstudianteUniversitarioHandler) DeleteEstudianteUniversitario(c *fiber.Ctx) error {
 	idStr := c.Params("id")
 	if idStr == "" {
-		return SendError(c, 400, "missing_id", "El ID del estudiante universitario es requerido", "Proporcione un ID válido")
+		return SendError(c, 400, "id_faltante", "El ID del estudiante universitario es requerido", "Proporcione un ID válido")
 	}
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil || id <= 0 {
-		return SendError(c, 400, "invalid_id", "El ID del estudiante universitario no es válido", "El ID debe ser un número entero positivo")
+		return SendError(c, 400, "id_invalido", "El ID del estudiante universitario no es válido", "El ID debe ser un número entero positivo")
 	}
 
 	// Verificar que el estudiante existe
-	_, err = h.estudianteUnivRepo.GetEstudianteUniversitarioByID(uint(id))
+	estudiante, err := h.estudianteUnivRepo.GetEstudianteUniversitarioByID(uint(id))
 	if err != nil {
-		return SendError(c, 404, "estudiante_univ_not_found", "No se encontró el estudiante universitario solicitado", "Verifique que el ID sea correcto")
+		return SendError(c, 404, "estudiante_univ_no_encontrado", "No se encontró el estudiante universitario solicitado", "Verifique que el ID sea correcto")
+	}
+
+	// Verificar si el estudiante tiene relaciones activas
+	if len(estudiante.VisitaDetalleEstudiantesUniversitarios) > 0 {
+		return SendError(c, 409, "estudiante_univ_en_uso", "No se puede eliminar el estudiante porque está siendo utilizado", "El estudiante tiene relaciones activas que impiden su eliminación")
 	}
 
 	// Eliminar estudiante universitario
 	if err := h.estudianteUnivRepo.DeleteEstudianteUniversitario(uint(id)); err != nil {
-		return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudo eliminar el estudiante universitario")
+		return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo eliminar el estudiante universitario")
 	}
 
 	return SendSuccess(c, 200, fiber.Map{
@@ -157,12 +164,12 @@ func (h *EstudianteUniversitarioHandler) DeleteEstudianteUniversitario(c *fiber.
 func (h *EstudianteUniversitarioHandler) GetEstudiantesUniversitariosBySemestre(c *fiber.Ctx) error {
 	semestreStr := c.Params("semestre")
 	if semestreStr == "" {
-		return SendError(c, 400, "missing_semestre", "El semestre es requerido", "Proporcione un semestre válido")
+		return SendError(c, 400, "semestre_faltante", "El semestre es requerido", "Proporcione un semestre válido")
 	}
 
 	semestre, err := strconv.Atoi(semestreStr)
 	if err != nil {
-		return SendError(c, 400, "invalid_semestre", "El semestre no es válido", "El semestre debe ser un número entero")
+		return SendError(c, 400, "semestre_invalido", "El semestre no es válido", "El semestre debe ser un número entero")
 	}
 
 	// Validar parámetro de búsqueda
@@ -172,7 +179,7 @@ func (h *EstudianteUniversitarioHandler) GetEstudiantesUniversitariosBySemestre(
 
 	estudiantes, err := h.estudianteUnivRepo.GetEstudiantesUniversitariosBySemestre(semestre)
 	if err != nil {
-		return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudieron obtener los estudiantes universitarios")
+		return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudieron obtener los estudiantes universitarios")
 	}
 
 	return SendSuccess(c, 200, estudiantes)
@@ -182,17 +189,17 @@ func (h *EstudianteUniversitarioHandler) GetEstudiantesUniversitariosBySemestre(
 func (h *EstudianteUniversitarioHandler) GetEstudianteUniversitarioByPersona(c *fiber.Ctx) error {
 	personaIDStr := c.Params("persona_id")
 	if personaIDStr == "" {
-		return SendError(c, 400, "missing_persona_id", "El ID de la persona es requerido", "Proporcione un ID válido")
+		return SendError(c, 400, "persona_id_faltante", "El ID de la persona es requerido", "Proporcione un ID válido")
 	}
 
 	personaID, err := strconv.Atoi(personaIDStr)
 	if err != nil || personaID <= 0 {
-		return SendError(c, 400, "invalid_persona_id", "El ID de la persona no es válido", "El ID debe ser un número entero positivo")
+		return SendError(c, 400, "persona_id_invalido", "El ID de la persona no es válido", "El ID debe ser un número entero positivo")
 	}
 
 	estudiante, err := h.estudianteUnivRepo.GetEstudianteUniversitarioByPersona(uint(personaID))
 	if err != nil {
-		return SendError(c, 404, "estudiante_univ_not_found", "No se encontró el estudiante universitario para esta persona", "Verifique que el ID de persona sea correcto")
+		return SendError(c, 404, "estudiante_univ_no_encontrado", "No se encontró el estudiante universitario para esta persona", "Verifique que el ID de persona sea correcto")
 	}
 
 	return SendSuccess(c, 200, estudiante)
@@ -215,13 +222,13 @@ func (h *EstudianteUniversitarioHandler) validateEstudianteUniversitario(estudia
 		errors = append(errors, ValidationError{
 			Field:   "semestre",
 			Message: "El semestre no puede ser negativo",
-			Value:   string(rune(estudiante.Semestre)),
+			Value:   strconv.Itoa(estudiante.Semestre),
 		})
-	} else if estudiante.Semestre > 20 { // Máximo 20 semestres (10 años)
+	} else if estudiante.Semestre > 0 && estudiante.Semestre > 20 { // Máximo 20 semestres (10 años)
 		errors = append(errors, ValidationError{
 			Field:   "semestre",
 			Message: "El semestre no puede exceder 20 (10 años)",
-			Value:   string(rune(estudiante.Semestre)),
+			Value:   strconv.Itoa(estudiante.Semestre),
 		})
 	}
 
