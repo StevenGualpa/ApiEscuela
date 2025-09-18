@@ -275,6 +275,10 @@ func (s *AuthService) sendEmail(to, subject, htmlBody string) error {
 	from := os.Getenv("SMTP_FROM")
 	fromName := os.Getenv("SMTP_FROM_NAME")
 
+	// Debug: Mostrar configuración SMTP (sin contraseña)
+	fmt.Printf("DEBUG SMTP - Host: %s, Port: %s, User: %s, From: %s, FromName: %s\n", host, port, user, from, fromName)
+	fmt.Printf("DEBUG SMTP - Pass length: %d\n", len(pass))
+
 	// Verificar que todas las variables estén definidas
 	if host == "" || port == "" || user == "" || pass == "" || from == "" || fromName == "" {
 		return fmt.Errorf("configuración SMTP incompleta. Verifique las variables de entorno: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, SMTP_FROM_NAME")
@@ -282,6 +286,8 @@ func (s *AuthService) sendEmail(to, subject, htmlBody string) error {
 
 	addr := host + ":" + port
 	auth := smtp.PlainAuth("", user, pass, host)
+	
+	fmt.Printf("DEBUG SMTP - Conectando a: %s\n", addr)
 
 	// Mensaje MIME
 	headers := make(map[string]string)
@@ -298,7 +304,14 @@ func (s *AuthService) sendEmail(to, subject, htmlBody string) error {
 	msgBuilder.WriteString("\r\n")
 	msgBuilder.WriteString(htmlBody)
 
-	return smtp.SendMail(addr, auth, from, []string{to}, []byte(msgBuilder.String()))
+	fmt.Printf("DEBUG SMTP - Enviando correo a: %s\n", to)
+	err := smtp.SendMail(addr, auth, from, []string{to}, []byte(msgBuilder.String()))
+	if err != nil {
+		fmt.Printf("DEBUG SMTP - Error al enviar correo: %v\n", err)
+	} else {
+		fmt.Printf("DEBUG SMTP - Correo enviado exitosamente\n")
+	}
+	return err
 }
 
 // generateRandomPassword crea una contraseña aleatoria alfanumérica

@@ -79,7 +79,7 @@ func main() {
 		debugURL = debugURL[:50] + "..."
 	}
 	log.Printf("Usando DATABASE_URL para conexión a la base de datos: %s", debugURL)
-	
+
 	// Debug: Verificar otras variables de entorno
 	log.Printf("Debug - Variables de entorno:")
 	log.Printf("  DATABASE_URL length: %d", len(databaseURL))
