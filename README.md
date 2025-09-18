@@ -589,16 +589,86 @@ cd ApiEscuela
 # 2. Instalar dependencias
 go mod tidy
 
-# 3. Configurar variables de entorno (opcional)
-echo "APP_PORT=3000
-JWT_SECRET=tu_clave_secreta_super_segura
-APP_ENV=development" > config.env
+# 3. Configurar variables de entorno
+cp env.example .env
+# Editar .env con tus valores reales
 
 # 4. Ejecutar aplicación
 go run main.go
 ```
 
 La aplicación estará disponible en `http://localhost:3000`
+
+## 🔐 Configuración de Variables de Entorno
+
+### Archivos de Configuración
+
+- **`.env`**: Variables de entorno para desarrollo (NO se sube a Git)
+- **`env.example`**: Plantilla con todas las variables necesarias
+- **`config.env`**: Archivo de respaldo (solo referencia)
+
+### Variables Requeridas
+
+```bash
+# Configuración de la aplicación
+APP_PORT=3000
+APP_ENV=development
+
+# Base de datos
+# Para desarrollo local (PostgreSQL)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=tu_usuario_db
+DB_PASSWORD=tu_password_db
+DB_NAME=apiescuela
+
+# Para producción (Neon/Heroku)
+# DATABASE_URL=postgres://usuario:password@host:puerto/database?sslmode=require
+
+# Configuración SMTP para envío de correos
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu_email@gmail.com
+SMTP_PASS=tu_app_password
+SMTP_FROM=tu_email@gmail.com
+SMTP_FROM_NAME=ApiEscuela
+
+# JWT Secret (cambiar por una clave segura en producción)
+JWT_SECRET=tu_jwt_secret_muy_seguro_aqui
+
+# Configuración de archivos
+UPLOAD_MAX_SIZE=52428800
+UPLOAD_ALLOWED_TYPES=jpg,jpeg,png,gif,mp4,avi,mov,pdf,doc,docx,txt
+```
+
+### Configuración para Producción
+
+1. **Crear archivo `.env`** con valores reales:
+   ```bash
+   cp env.example .env
+   nano .env  # Editar con tus valores
+   ```
+
+2. **Configurar SMTP** (Gmail):
+   - Habilitar autenticación de 2 factores
+   - Generar contraseña de aplicación
+   - Usar la contraseña de aplicación en `SMTP_PASS`
+
+3. **Configurar base de datos**:
+   - Para Neon/Heroku: usar `DATABASE_URL`
+   - Para local: usar `DB_HOST`, `DB_USER`, etc.
+
+4. **Generar JWT Secret seguro**:
+   ```bash
+   # Generar clave aleatoria de 32 caracteres
+   openssl rand -hex 32
+   ```
+
+### Seguridad
+
+- ✅ **`.env` está en `.gitignore`** - No se sube al repositorio
+- ✅ **`env.example`** - Plantilla segura para otros desarrolladores
+- ✅ **Variables sensibles protegidas** - Contraseñas y claves secretas
 
 ## 🛠️ Tecnologías
 

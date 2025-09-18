@@ -25,9 +25,15 @@ vendor/
 # Archivos de IDE
 .vscode/
 .idea/
+.qodo/
 *.swp
 *.swo
 *~
+
+# Archivos de configuración de ejemplo
+env.example
+config.env
+CONFIGURACION.md
 
 # Archivos de sistema
 .DS_Store
