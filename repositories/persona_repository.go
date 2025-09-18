@@ -4,6 +4,7 @@ import (
 	"ApiEscuela/models"
 	"errors"
 	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -37,6 +38,11 @@ func classifyUniquePersonaError(err error) error {
 
 func NewPersonaRepository(db *gorm.DB) *PersonaRepository {
 	return &PersonaRepository{db: db}
+}
+
+// GetDB retorna la instancia de la base de datos para uso interno
+func (r *PersonaRepository) GetDB() *gorm.DB {
+	return r.db
 }
 
 // CreatePersona crea una nueva persona

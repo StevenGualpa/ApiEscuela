@@ -10,10 +10,14 @@ import (
 
 type EstudianteUniversitarioHandler struct {
 	estudianteUnivRepo *repositories.EstudianteUniversitarioRepository
+	personaRepo        *repositories.PersonaRepository
 }
 
-func NewEstudianteUniversitarioHandler(estudianteUnivRepo *repositories.EstudianteUniversitarioRepository) *EstudianteUniversitarioHandler {
-	return &EstudianteUniversitarioHandler{estudianteUnivRepo: estudianteUnivRepo}
+func NewEstudianteUniversitarioHandler(estudianteUnivRepo *repositories.EstudianteUniversitarioRepository, personaRepo *repositories.PersonaRepository) *EstudianteUniversitarioHandler {
+	return &EstudianteUniversitarioHandler{
+		estudianteUnivRepo: estudianteUnivRepo,
+		personaRepo:        personaRepo,
+	}
 }
 
 // CreateEstudianteUniversitario crea un nuevo estudiante universitario
@@ -119,6 +123,11 @@ func (h *EstudianteUniversitarioHandler) UpdateEstudianteUniversitario(c *fiber.
 
 	// Verificar si la nueva persona ya tiene un registro de estudiante universitario (si cambia la persona)
 	if updateData.PersonaID != existingEstudiante.PersonaID {
+		// Verificar que la nueva persona existe
+		if !h.personaExists(updateData.PersonaID) {
+			return SendError(c, 400, "persona_no_existe", "No se encontró la persona con el ID especificado", "Verifique que el persona_id sea correcto y que la persona exista en el sistema")
+		}
+
 		if existingEstudianteByPersona, _ := h.estudianteUnivRepo.GetEstudianteUniversitarioByPersona(updateData.PersonaID); existingEstudianteByPersona != nil {
 			return SendError(c, 409, "estudiante_univ_duplicado", "La persona ya tiene un registro de estudiante universitario", "Una persona solo puede tener un registro de estudiante universitario")
 		}
@@ -285,5 +294,11 @@ func (h *EstudianteUniversitarioHandler) validateEstudianteUniversitarioSearchPa
 
 // personaExists verifica si una persona existe en la base de datos
 func (h *EstudianteUniversitarioHandler) personaExists(personaID uint) bool {
-	return personaID > 0
+	if personaID == 0 {
+		return false
+	}
+
+	var count int64
+	err := h.personaRepo.GetDB().Model(&models.Persona{}).Where("id = ?", personaID).Count(&count).Error
+	return err == nil && count > 0
 }

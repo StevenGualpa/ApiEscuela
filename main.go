@@ -152,7 +152,7 @@ func main() {
 	institucionHandler := handlers.NewInstitucionHandler(institucionRepo)
 	tipoUsuarioHandler := handlers.NewTipoUsuarioHandler(tipoUsuarioRepo)
 	usuarioHandler := handlers.NewUsuarioHandler(usuarioRepo)
-	estudianteUnivHandler := handlers.NewEstudianteUniversitarioHandler(estudianteUnivRepo)
+	estudianteUnivHandler := handlers.NewEstudianteUniversitarioHandler(estudianteUnivRepo, personaRepo)
 	autoridadHandler := handlers.NewAutoridadUTEQHandler(autoridadRepo)
 	tematicaHandler := handlers.NewTematicaHandler(tematicaRepo)
 	actividadHandler := handlers.NewActividadHandler(actividadRepo)
