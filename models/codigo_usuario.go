@@ -2,6 +2,7 @@ package models
 
 import (
 	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -10,10 +11,10 @@ import (
 // ExpiraEn: fecha/hora de expiración (10 minutos desde su creación)
 type CodigoUsuario struct {
 	gorm.Model
-	UsuarioID uint      `json:"usuario_id" gorm:"not null;index"`
-	Usuario   Usuario   `json:"usuario,omitempty" gorm:"foreignKey:UsuarioID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
-	Codigo    string    `json:"codigo" gorm:"not null;size:10;index"`
-	ExpiraEn  time.Time `json:"expira_en" gorm:"not null;index"`
+	UsuarioID uint       `json:"usuario_id" gorm:"not null;index"`
+	Usuario   Usuario    `json:"usuario,omitempty" gorm:"foreignKey:UsuarioID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Codigo    string     `json:"codigo" gorm:"not null;size:10;index"`
+	ExpiraEn  *time.Time `json:"expira_en" gorm:"index"`
 }
 
 // TableName fuerza el nombre de la tabla a "codigosusuarios"
