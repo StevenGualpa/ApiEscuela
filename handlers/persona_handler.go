@@ -198,10 +198,10 @@ func (h *PersonaHandler) GetPersonaByCedula(c *fiber.Ctx) error {
 		return SendError(c, 400, "missing_cedula", "La cédula es requerida", "Proporcione una cédula válida")
 	}
 
-	// Validar formato de cédula
-	cedulaRegex := regexp.MustCompile(`^\d{10}$`)
+	// Validar formato de cédula (más flexible)
+	cedulaRegex := regexp.MustCompile(`^\d{7,10}$`)
 	if !cedulaRegex.MatchString(strings.TrimSpace(cedula)) {
-		return SendError(c, 400, "invalid_cedula", "El formato de la cédula no es válido", "La cédula debe tener exactamente 10 dígitos numéricos")
+		return SendError(c, 400, "invalid_cedula", "El formato de la cédula no es válido", "La cédula debe tener entre 7 y 10 dígitos numéricos")
 	}
 
 	persona, err := h.personaRepo.GetPersonaByCedula(strings.TrimSpace(cedula))
@@ -287,12 +287,12 @@ func (h *PersonaHandler) validatePersona(persona *models.Persona, isUpdate bool)
 			Value:   persona.Cedula,
 		})
 	} else {
-		// Validar formato de cédula ecuatoriana (10 dígitos)
-		cedulaRegex := regexp.MustCompile(`^\d{10}$`)
+		// Validar formato de cédula (más flexible)
+		cedulaRegex := regexp.MustCompile(`^\d{7,10}$`)
 		if !cedulaRegex.MatchString(cedula) {
 			errors = append(errors, ValidationError{
 				Field:   "cedula",
-				Message: "La cédula debe tener exactamente 10 dígitos numéricos",
+				Message: "La cédula debe tener entre 7 y 10 dígitos numéricos",
 				Value:   persona.Cedula,
 			})
 		}
