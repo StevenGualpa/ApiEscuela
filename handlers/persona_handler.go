@@ -3,7 +3,6 @@ package handlers
 import (
 	"ApiEscuela/models"
 	"ApiEscuela/repositories"
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -46,38 +45,28 @@ func (h *PersonaHandler) CreatePersona(c *fiber.Ctx) error {
 	persona.Telefono = strings.TrimSpace(persona.Telefono)
 
 	// Verificar si ya existe una persona con la misma cédula
-	fmt.Printf("DEBUG: Verificando cédula: %s\n", persona.Cedula)
 	if existingPersona, err := h.personaRepo.GetPersonaByCedula(persona.Cedula); err == nil && existingPersona != nil {
-		fmt.Printf("DEBUG: Cédula duplicada encontrada: %s\n", persona.Cedula)
 		return SendError(c, 409, "duplicate_cedula", "Ya existe una persona con esta cédula", "La cédula debe ser única")
 	}
 
 	// Verificar si ya existe una persona con el mismo correo (si se proporciona)
 	if persona.Correo != "" {
-		fmt.Printf("DEBUG: Verificando correo: %s\n", persona.Correo)
 		if existingPersonas, err := h.personaRepo.GetPersonasByCorreo(persona.Correo); err == nil && len(existingPersonas) > 0 {
-			fmt.Printf("DEBUG: Correo duplicado encontrado: %s\n", persona.Correo)
 			return SendError(c, 409, "duplicate_email", "Ya existe una persona con este correo electrónico", "El correo debe ser único")
 		}
 	}
 
 	// Crear persona
-	fmt.Printf("DEBUG: Intentando crear persona con cédula: %s, correo: %s\n", persona.Cedula, persona.Correo)
 	if err := h.personaRepo.CreatePersona(&persona); err != nil {
-		fmt.Printf("DEBUG: Error al crear persona: %s\n", err.Error())
 		// Manejar errores específicos del repositorio
 		switch err.Error() {
 		case "cedula repetida":
-			fmt.Printf("DEBUG: Error de cédula repetida detectado\n")
 			return SendError(c, 409, "duplicate_cedula", "Ya existe una persona con esta cédula", "La cédula debe ser única")
 		case "correo repetido":
-			fmt.Printf("DEBUG: Error de correo repetido detectado\n")
 			return SendError(c, 409, "duplicate_email", "Ya existe una persona con este correo electrónico", "El correo debe ser único")
 		case "persona ya existe":
-			fmt.Printf("DEBUG: Error de persona duplicada detectado\n")
 			return SendError(c, 409, "persona_duplicada", "Ya existe una persona con estos datos", "Verifique que los datos sean únicos")
 		default:
-			fmt.Printf("DEBUG: Error genérico de base de datos: %s\n", err.Error())
 			return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudo crear la persona")
 		}
 	}
