@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"ApiEscuela/models"
+
 	"gorm.io/gorm"
 )
 
@@ -11,6 +12,11 @@ type InstitucionRepository struct {
 
 func NewInstitucionRepository(db *gorm.DB) *InstitucionRepository {
 	return &InstitucionRepository{db: db}
+}
+
+// GetDB retorna la instancia de la base de datos para uso interno
+func (r *InstitucionRepository) GetDB() *gorm.DB {
+	return r.db
 }
 
 // CreateInstitucion crea una nueva institución

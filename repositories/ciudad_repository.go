@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"ApiEscuela/models"
+
 	"gorm.io/gorm"
 )
 
@@ -11,6 +12,11 @@ type CiudadRepository struct {
 
 func NewCiudadRepository(db *gorm.DB) *CiudadRepository {
 	return &CiudadRepository{db: db}
+}
+
+// GetDB retorna la instancia de la base de datos para uso interno
+func (r *CiudadRepository) GetDB() *gorm.DB {
+	return r.db
 }
 
 // CreateCiudad crea una nueva ciudad

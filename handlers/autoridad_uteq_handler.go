@@ -3,7 +3,6 @@ package handlers
 import (
 	"ApiEscuela/models"
 	"ApiEscuela/repositories"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -12,10 +11,14 @@ import (
 
 type AutoridadUTEQHandler struct {
 	autoridadRepo *repositories.AutoridadUTEQRepository
+	personaRepo   *repositories.PersonaRepository
 }
 
-func NewAutoridadUTEQHandler(autoridadRepo *repositories.AutoridadUTEQRepository) *AutoridadUTEQHandler {
-	return &AutoridadUTEQHandler{autoridadRepo: autoridadRepo}
+func NewAutoridadUTEQHandler(autoridadRepo *repositories.AutoridadUTEQRepository, personaRepo *repositories.PersonaRepository) *AutoridadUTEQHandler {
+	return &AutoridadUTEQHandler{
+		autoridadRepo: autoridadRepo,
+		personaRepo:   personaRepo,
+	}
 }
 
 // CreateAutoridadUTEQ crea una nueva autoridad UTEQ
@@ -48,11 +51,6 @@ func (h *AutoridadUTEQHandler) CreateAutoridadUTEQ(c *fiber.Ctx) error {
 	// Verificar que la persona existe (validación de relación)
 	if !h.personaExists(autoridad.PersonaID) {
 		return SendError(c, 400, "persona_no_existe", "No se encontró la persona con el ID especificado", "Verifique que el persona_id sea correcto y que la persona exista en el sistema")
-	}
-
-	// Verificar si la persona ya tiene un cargo asignado
-	if existingAutoridad, _ := h.autoridadRepo.GetAutoridadUTEQByPersona(autoridad.PersonaID); existingAutoridad != nil {
-		return SendError(c, 409, "autoridad_duplicada", "La persona ya tiene un cargo asignado", "Una persona solo puede tener un cargo de autoridad")
 	}
 
 	// Crear autoridad
@@ -152,6 +150,11 @@ func (h *AutoridadUTEQHandler) UpdateAutoridadUTEQ(c *fiber.Ctx) error {
 
 	// Verificar si la nueva persona ya tiene un cargo asignado (si cambia la persona)
 	if updateData.PersonaID != existingAutoridad.PersonaID {
+		// Verificar que la nueva persona existe
+		if !h.personaExists(updateData.PersonaID) {
+			return SendError(c, 400, "persona_no_existe", "No se encontró la persona con el ID especificado", "Verifique que el persona_id sea correcto y que la persona exista en el sistema")
+		}
+
 		if existingAutoridadByPersona, _ := h.autoridadRepo.GetAutoridadUTEQByPersona(updateData.PersonaID); existingAutoridadByPersona != nil {
 			return SendError(c, 409, "autoridad_duplicada", "La persona ya tiene un cargo asignado", "Una persona solo puede tener un cargo de autoridad")
 		}
@@ -322,22 +325,12 @@ func (h *AutoridadUTEQHandler) validateAutoridadUTEQRequiredFields(autoridad *mo
 func (h *AutoridadUTEQHandler) validateAutoridadUTEQSearchParams(cargo string) []ValidationError {
 	var errors []ValidationError
 
-	// Validar cargo de búsqueda
+	// Validar cargo de búsqueda (más flexible)
 	if strings.TrimSpace(cargo) != "" {
-		if len(strings.TrimSpace(cargo)) < 2 {
+		if len(strings.TrimSpace(cargo)) < 1 {
 			errors = append(errors, ValidationError{
 				Field:   "cargo",
-				Message: "El término de búsqueda de cargo debe tener al menos 2 caracteres",
-				Value:   cargo,
-			})
-		}
-
-		// Validar que no contenga caracteres especiales problemáticos
-		specialCharsRegex := regexp.MustCompile(`[<>{}[\]\\|` + "`" + `~!@#$%^&*()+=;:'"<>?/]`)
-		if specialCharsRegex.MatchString(cargo) {
-			errors = append(errors, ValidationError{
-				Field:   "cargo",
-				Message: "El término de búsqueda no puede contener caracteres especiales",
+				Message: "El término de búsqueda de cargo no puede estar vacío",
 				Value:   cargo,
 			})
 		}
@@ -348,8 +341,11 @@ func (h *AutoridadUTEQHandler) validateAutoridadUTEQSearchParams(cargo string) [
 
 // personaExists verifica si una persona existe en la base de datos
 func (h *AutoridadUTEQHandler) personaExists(personaID uint) bool {
-	// Esta es una validación simple - en un caso real podrías querer inyectar el repositorio de personas
-	// Por ahora, asumimos que si llegamos aquí, la persona existe
-	// En una implementación más robusta, harías una consulta a la base de datos
-	return personaID > 0
+	if personaID == 0 {
+		return false
+	}
+
+	var count int64
+	err := h.personaRepo.GetDB().Model(&models.Persona{}).Where("id = ?", personaID).Count(&count).Error
+	return err == nil && count > 0
 }

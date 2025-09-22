@@ -257,25 +257,6 @@ func (h *PersonaHandler) validatePersona(persona *models.Persona, isUpdate bool)
 			Message: "El nombre no puede exceder 100 caracteres",
 			Value:   persona.Nombre,
 		})
-	} else {
-		// Validar que no contenga solo números
-		numberRegex := regexp.MustCompile(`^\d+$`)
-		if numberRegex.MatchString(nombre) {
-			errors = append(errors, ValidationError{
-				Field:   "nombre",
-				Message: "El nombre no puede contener solo números",
-				Value:   persona.Nombre,
-			})
-		}
-		// Validar que no contenga caracteres especiales problemáticos
-		specialCharsRegex := regexp.MustCompile(`[<>{}[\]\\|` + "`" + `~!@#$%^&*()+=;:'"<>?/]`)
-		if specialCharsRegex.MatchString(nombre) {
-			errors = append(errors, ValidationError{
-				Field:   "nombre",
-				Message: "El nombre no puede contener caracteres especiales",
-				Value:   persona.Nombre,
-			})
-		}
 	}
 
 	// Validar cédula
@@ -288,11 +269,11 @@ func (h *PersonaHandler) validatePersona(persona *models.Persona, isUpdate bool)
 		})
 	} else {
 		// Validar formato de cédula (más flexible)
-		cedulaRegex := regexp.MustCompile(`^\d{7,10}$`)
+		cedulaRegex := regexp.MustCompile(`^\d{6,15}$`)
 		if !cedulaRegex.MatchString(cedula) {
 			errors = append(errors, ValidationError{
 				Field:   "cedula",
-				Message: "La cédula debe tener entre 7 y 10 dígitos numéricos",
+				Message: "La cédula debe tener entre 6 y 15 dígitos numéricos",
 				Value:   persona.Cedula,
 			})
 		}
@@ -314,40 +295,25 @@ func (h *PersonaHandler) validatePersona(persona *models.Persona, isUpdate bool)
 				Message: "El correo no puede exceder 255 caracteres",
 				Value:   persona.Correo,
 			})
-		} else if strings.Contains(correo, " ") {
-			errors = append(errors, ValidationError{
-				Field:   "correo",
-				Message: "El correo no puede contener espacios",
-				Value:   persona.Correo,
-			})
 		}
 	}
 
 	// Validar teléfono (opcional pero si se proporciona debe ser válido)
 	telefono := strings.TrimSpace(persona.Telefono)
 	if telefono != "" {
-		phoneRegex := regexp.MustCompile(`^[\d\s\-\+\(\)]{7,15}$`)
-		if !phoneRegex.MatchString(telefono) {
+		// Verificar que tenga al menos 7 dígitos
+		digitCount := 0
+		for _, char := range telefono {
+			if char >= '0' && char <= '9' {
+				digitCount++
+			}
+		}
+		if digitCount < 7 {
 			errors = append(errors, ValidationError{
 				Field:   "telefono",
-				Message: "El formato del teléfono no es válido",
+				Message: "El teléfono debe contener al menos 7 dígitos",
 				Value:   persona.Telefono,
 			})
-		} else {
-			// Verificar que tenga al menos 7 dígitos
-			digitCount := 0
-			for _, char := range telefono {
-				if char >= '0' && char <= '9' {
-					digitCount++
-				}
-			}
-			if digitCount < 7 {
-				errors = append(errors, ValidationError{
-					Field:   "telefono",
-					Message: "El teléfono debe contener al menos 7 dígitos",
-					Value:   persona.Telefono,
-				})
-			}
 		}
 	}
 
@@ -361,26 +327,6 @@ func (h *PersonaHandler) validatePersona(persona *models.Persona, isUpdate bool)
 				Message: "La fecha de nacimiento no puede ser futura",
 				Value:   persona.FechaNacimiento.Format("2006-01-02"),
 			})
-		} else {
-			// Verificar que la persona no sea muy joven (menos de 1 año)
-			oneYearAgo := now.AddDate(-1, 0, 0)
-			if persona.FechaNacimiento.After(oneYearAgo) {
-				errors = append(errors, ValidationError{
-					Field:   "fecha_nacimiento",
-					Message: "La fecha de nacimiento debe ser de al menos 1 año atrás",
-					Value:   persona.FechaNacimiento.Format("2006-01-02"),
-				})
-			} else {
-				// Verificar que la persona no sea muy vieja (más de 150 años)
-				oneHundredFiftyYearsAgo := now.AddDate(-150, 0, 0)
-				if persona.FechaNacimiento.Before(oneHundredFiftyYearsAgo) {
-					errors = append(errors, ValidationError{
-						Field:   "fecha_nacimiento",
-						Message: "La fecha de nacimiento no puede ser de hace más de 150 años",
-						Value:   persona.FechaNacimiento.Format("2006-01-02"),
-					})
-				}
-			}
 		}
 	}
 

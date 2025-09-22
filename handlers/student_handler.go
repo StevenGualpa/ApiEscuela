@@ -3,7 +3,6 @@ package handlers
 import (
 	"ApiEscuela/models"
 	"ApiEscuela/repositories"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -11,11 +10,19 @@ import (
 )
 
 type EstudianteHandler struct {
-	estudianteRepo *repositories.EstudianteRepository
+	estudianteRepo  *repositories.EstudianteRepository
+	personaRepo     *repositories.PersonaRepository
+	institucionRepo *repositories.InstitucionRepository
+	ciudadRepo      *repositories.CiudadRepository
 }
 
-func NewEstudianteHandler(estudianteRepo *repositories.EstudianteRepository) *EstudianteHandler {
-	return &EstudianteHandler{estudianteRepo: estudianteRepo}
+func NewEstudianteHandler(estudianteRepo *repositories.EstudianteRepository, personaRepo *repositories.PersonaRepository, institucionRepo *repositories.InstitucionRepository, ciudadRepo *repositories.CiudadRepository) *EstudianteHandler {
+	return &EstudianteHandler{
+		estudianteRepo:  estudianteRepo,
+		personaRepo:     personaRepo,
+		institucionRepo: institucionRepo,
+		ciudadRepo:      ciudadRepo,
+	}
 }
 
 // CreateEstudiante crea un nuevo estudiante
@@ -374,22 +381,12 @@ func (h *EstudianteHandler) validateEstudianteRequiredFields(estudiante *models.
 func (h *EstudianteHandler) validateEstudianteSearchParams(especialidad string) []ValidationError {
 	var errors []ValidationError
 
-	// Validar especialidad de búsqueda
+	// Validar especialidad de búsqueda (más flexible)
 	if strings.TrimSpace(especialidad) != "" {
-		if len(strings.TrimSpace(especialidad)) < 2 {
+		if len(strings.TrimSpace(especialidad)) < 1 {
 			errors = append(errors, ValidationError{
 				Field:   "especialidad",
-				Message: "El término de búsqueda de especialidad debe tener al menos 2 caracteres",
-				Value:   especialidad,
-			})
-		}
-
-		// Validar que no contenga caracteres especiales problemáticos
-		specialCharsRegex := regexp.MustCompile(`[<>{}[\]\\|` + "`" + `~!@#$%^&*()+=;:'"<>?/]`)
-		if specialCharsRegex.MatchString(especialidad) {
-			errors = append(errors, ValidationError{
-				Field:   "especialidad",
-				Message: "El término de búsqueda no puede contener caracteres especiales",
+				Message: "El término de búsqueda de especialidad no puede estar vacío",
 				Value:   especialidad,
 			})
 		}
@@ -400,15 +397,33 @@ func (h *EstudianteHandler) validateEstudianteSearchParams(especialidad string) 
 
 // personaExists verifica si una persona existe en la base de datos
 func (h *EstudianteHandler) personaExists(personaID uint) bool {
-	return personaID > 0
+	if personaID == 0 {
+		return false
+	}
+
+	var count int64
+	err := h.personaRepo.GetDB().Model(&models.Persona{}).Where("id = ?", personaID).Count(&count).Error
+	return err == nil && count > 0
 }
 
 // institucionExists verifica si una institución existe en la base de datos
 func (h *EstudianteHandler) institucionExists(institucionID uint) bool {
-	return institucionID > 0
+	if institucionID == 0 {
+		return false
+	}
+
+	var count int64
+	err := h.institucionRepo.GetDB().Model(&models.Institucion{}).Where("id = ?", institucionID).Count(&count).Error
+	return err == nil && count > 0
 }
 
 // ciudadExists verifica si una ciudad existe en la base de datos
 func (h *EstudianteHandler) ciudadExists(ciudadID uint) bool {
-	return ciudadID > 0
+	if ciudadID == 0 {
+		return false
+	}
+
+	var count int64
+	err := h.ciudadRepo.GetDB().Model(&models.Ciudad{}).Where("id = ?", ciudadID).Count(&count).Error
+	return err == nil && count > 0
 }

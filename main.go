@@ -145,7 +145,7 @@ func main() {
 	noticiaRepo := repositories.NewNoticiaRepository(db)
 
 	// Inicializar handlers
-	estudianteHandler := handlers.NewEstudianteHandler(estudianteRepo)
+	estudianteHandler := handlers.NewEstudianteHandler(estudianteRepo, personaRepo, institucionRepo, ciudadRepo)
 	personaHandler := handlers.NewPersonaHandler(personaRepo)
 	provinciaHandler := handlers.NewProvinciaHandler(provinciaRepo)
 	ciudadHandler := handlers.NewCiudadHandler(ciudadRepo)
@@ -153,7 +153,7 @@ func main() {
 	tipoUsuarioHandler := handlers.NewTipoUsuarioHandler(tipoUsuarioRepo)
 	usuarioHandler := handlers.NewUsuarioHandler(usuarioRepo)
 	estudianteUnivHandler := handlers.NewEstudianteUniversitarioHandler(estudianteUnivRepo, personaRepo)
-	autoridadHandler := handlers.NewAutoridadUTEQHandler(autoridadRepo)
+	autoridadHandler := handlers.NewAutoridadUTEQHandler(autoridadRepo, personaRepo)
 	tematicaHandler := handlers.NewTematicaHandler(tematicaRepo)
 	actividadHandler := handlers.NewActividadHandler(actividadRepo)
 	programaVisitaHandler := handlers.NewProgramaVisitaHandler(programaVisitaRepo)
