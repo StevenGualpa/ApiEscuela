@@ -58,7 +58,17 @@ func (h *PersonaHandler) CreatePersona(c *fiber.Ctx) error {
 
 	// Crear persona
 	if err := h.personaRepo.CreatePersona(&persona); err != nil {
-		return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudo crear la persona")
+		// Manejar errores específicos del repositorio
+		switch err.Error() {
+		case "cedula repetida":
+			return SendError(c, 409, "duplicate_cedula", "Ya existe una persona con esta cédula", "La cédula debe ser única")
+		case "correo repetido":
+			return SendError(c, 409, "duplicate_email", "Ya existe una persona con este correo electrónico", "El correo debe ser único")
+		case "persona ya existe":
+			return SendError(c, 409, "persona_duplicada", "Ya existe una persona con estos datos", "Verifique que los datos sean únicos")
+		default:
+			return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudo crear la persona")
+		}
 	}
 
 	return SendSuccess(c, 201, persona)
@@ -152,7 +162,17 @@ func (h *PersonaHandler) UpdatePersona(c *fiber.Ctx) error {
 
 	// Actualizar en base de datos
 	if err := h.personaRepo.UpdatePersona(&persona); err != nil {
-		return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudo actualizar la persona")
+		// Manejar errores específicos del repositorio
+		switch err.Error() {
+		case "cedula repetida":
+			return SendError(c, 409, "duplicate_cedula", "Ya existe otra persona con esta cédula", "La cédula debe ser única")
+		case "correo repetido":
+			return SendError(c, 409, "duplicate_email", "Ya existe otra persona con este correo electrónico", "El correo debe ser único")
+		case "persona ya existe":
+			return SendError(c, 409, "persona_duplicada", "Ya existe otra persona con estos datos", "Verifique que los datos sean únicos")
+		default:
+			return SendError(c, 500, "database_error", "Error interno del servidor", "No se pudo actualizar la persona")
+		}
 	}
 
 	return SendSuccess(c, 200, persona)
