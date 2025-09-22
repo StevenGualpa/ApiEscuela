@@ -71,7 +71,13 @@ func (h *EstudianteHandler) CreateEstudiante(c *fiber.Ctx) error {
 
 	// Crear estudiante
 	if err := h.estudianteRepo.CreateEstudiante(&estudiante); err != nil {
-		return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo crear el estudiante")
+		// Manejar errores específicos del repositorio
+		switch err.Error() {
+		case "estudiante ya existe":
+			return SendError(c, 409, "estudiante_duplicado", "La persona ya tiene un registro de estudiante", "Una persona solo puede tener un registro de estudiante")
+		default:
+			return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo crear el estudiante")
+		}
 	}
 
 	return SendSuccess(c, 201, estudiante)
@@ -175,7 +181,13 @@ func (h *EstudianteHandler) UpdateEstudiante(c *fiber.Ctx) error {
 
 	// Guardar cambios
 	if err := h.estudianteRepo.UpdateEstudiante(existingEstudiante); err != nil {
-		return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo actualizar el estudiante")
+		// Manejar errores específicos del repositorio
+		switch err.Error() {
+		case "estudiante ya existe":
+			return SendError(c, 409, "estudiante_duplicado", "La persona ya tiene un registro de estudiante", "Una persona solo puede tener un registro de estudiante")
+		default:
+			return SendError(c, 500, "error_base_datos", "Error interno del servidor", "No se pudo actualizar el estudiante")
+		}
 	}
 
 	return SendSuccess(c, 200, existingEstudiante)
